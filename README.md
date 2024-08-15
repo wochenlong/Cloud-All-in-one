@@ -21,6 +21,6 @@ https://github.com/Eugeoter/waifuset
 
 ## 支持平台： 
 
-1.AUTODL
+### 1.[AUTODL](https://www.autodl.com/home)
 
 https://www.codewithgpu.com/i/t4wefan/kohya_ss/kohya-ss-SDXL
