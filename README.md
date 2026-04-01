@@ -18,10 +18,6 @@
 
 - [Eugeoter/waifuset](https://github.com/Eugeoter/waifuset)
 
-### ComfyUI 插件
-
-- [comfyui_qwen_controlnet](comfyui_qwen_controlnet/) — Qwen Image ControlNet 插件（真正的 ControlNet，非 LoRA）
-
 ## 仓库结构
 
 ```
@@ -29,11 +25,6 @@ Cloud-All-in-one/
 ├── autodl/                          # AutoDL 云平台相关脚本
 │   ├── update-aitoolkitmodel.sh     # 模型符号链接更新脚本（主版本）
 │   └── update-aitoolkitmodel-new.sh # 参考版本
-├── comfyui_qwen_controlnet/         # ComfyUI Qwen ControlNet 插件
-│   ├── __init__.py
-│   ├── models.py
-│   ├── nodes_backup.py
-│   └── ...
 └── README.md
 ```
 
