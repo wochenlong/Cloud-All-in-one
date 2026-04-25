@@ -11,7 +11,6 @@
 
 | HuggingFace 路径 | 模型简称 | 说明 | 预估大小 |
 |---|---|---|---|
-| `baidu/ERNIE-Image` | ERNIE Image | 百度 8B DiT 文本生图模型（SFT 版，50 步） | ~16 GB |
 | `baidu/ERNIE-Image-Turbo` | ERNIE Image Turbo | 百度蒸馏加速版（8 步） | ~16 GB |
 | `NucleusAI/Nucleus-Image` | Nucleus Image | 17B MoE 扩散模型（激活 2B），SOTA 级 | ~34 GB |
 | `lodestones/Chroma1-Base` | Chroma | 开源文本生图扩散模型 | ~23 GB |
@@ -51,6 +50,7 @@
 | `Qwen/Qwen-Image-Edit-2511` | 已有 |
 | `Qwen/Qwen3-4B` | 已有 |
 | `Qwen/Qwen3-8B` | 已有 |
+| `baidu/ERNIE-Image` | 已有 |
 | `Tongyi-MAI/Z-Image` | 已有 |
 | `Tongyi-MAI/Z-Image-Turbo` | 已有 |
 | `ostris/Z-Image-De-Turbo` | 已有 |
