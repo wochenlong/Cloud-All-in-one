@@ -21,6 +21,147 @@ https://github.com/wochenlong/aitoolkit-trainer
 
 `Cloud-All-in-one/autodl` 负责 AutoDL 平台和镜像编排，`aitoolkit-trainer` 负责 AI-Toolkit 数据集验证、训练配置生成和 tmux 启动训练。
 
+## 目标愿景
+
+理想状态下，用户只需要在本地准备好训练集和少量训练意图，例如“训练一个 Qwen Image LoRA”：
+
+1. Agent 根据训练类型选择合适的 AutoDL 镜像 profile。
+2. Agent 通过云平台 API 创建 GPU 实例。
+3. Agent 自动上传本地训练集和必要配置。
+4. 云端镜像自动验证数据集、生成训练配置并启动训练。
+5. 训练完成后，Agent 自动下载 LoRA/模型产物到本地。
+6. Agent 按用户选择关机或释放云实例，避免继续计费。
+
+也就是：
+
+```text
+本地训练集 -> 云端 GPU -> 等待训练 -> 本地得到模型
+```
+
+## 希望云平台补齐的能力
+
+当前 AutoDL 已经提供实例生命周期 API，适合做创建实例、查询状态、开机、关机、释放等编排。但要实现真正丝滑的一键云端训练，还需要平台侧或工具侧补齐下面这些能力。
+
+这些需求的目标是：让 Agent 不必依赖交互式 SSH，就能稳定完成“上传数据 -> 启动训练 -> 查看状态 -> 下载模型”。
+
+### 文件上传 API
+
+用于把本地训练集、训练配置或小型辅助文件上传到云端实例的数据盘。
+
+建议能力：
+
+- 支持上传单文件和目录。
+- 支持大文件分片、断点续传和进度查询。
+- 支持指定远端目标路径，例如 `/root/autodl-tmp/datasets/<job_name>/`。
+- 支持校验文件大小、hash 或 manifest，避免训练集上传不完整。
+- 支持覆盖策略，例如跳过同名文件、覆盖同名文件、清空目录后上传。
+
+当前备用方案：`scp` / `rsync` / `sftp`。
+
+### 文件下载 API
+
+用于把训练完成后的 LoRA、checkpoint、日志、样图等产物下载回本地。
+
+建议能力：
+
+- 支持下载单文件和目录。
+- 支持按通配符或 manifest 下载，例如只下载 `.safetensors`、`.pt`、`.json`、`.log`。
+- 支持打包下载目录，减少大量小文件传输失败。
+- 支持断点续传和下载校验。
+- 支持列出远端目录文件，方便 Agent 判断哪些产物应该下载。
+
+当前备用方案：`scp` / `rsync` / `sftp`。
+
+### 训练状态 API
+
+用于让 Agent 判断训练任务是正在运行、成功结束、失败、OOM、中断，还是等待用户处理。
+
+建议能力：
+
+- 支持创建一个平台可识别的训练任务记录。
+- 返回状态：`queued`、`running`、`succeeded`、`failed`、`stopped`、`unknown`。
+- 返回关键运行信息：开始时间、运行时长、GPU 使用情况、最近一次心跳。
+- 返回失败原因分类，例如 OOM、磁盘不足、数据集缺失、依赖错误、用户停止。
+- 支持主动停止训练任务。
+
+当前备用方案：读取 `tmux`、进程列表和日志文件。
+
+### 日志 API
+
+用于不进入 SSH 的情况下查看训练日志，方便 Agent 监控进度和定位错误。
+
+建议能力：
+
+- 支持读取完整日志。
+- 支持 tail 最近 N 行。
+- 支持按 offset 或 cursor 增量读取日志。
+- 支持区分 stdout、stderr 和平台事件。
+- 支持保留任务结束后的日志，便于失败后诊断。
+
+当前备用方案：`tmux attach`、`tail -f` 或下载日志文件。
+
+### 标准产物路径
+
+不同训练镜像的输出目录差异很大。Agent 需要知道训练完成后应该去哪里找模型文件、样图和日志。
+
+建议标准：
+
+- 每个镜像声明默认输出目录，例如 `/root/autodl-tmp/output/<job_name>/`。
+- 每个任务写一个产物 manifest，例如 `artifacts.json`。
+- manifest 中列出模型文件、配置文件、日志、样图、最终推荐下载文件。
+- 标记产物类型，例如 `lora`、`checkpoint`、`sample_image`、`log`、`config`。
+- 明确哪些目录会随镜像保存，哪些目录只在数据盘保存。
+
+当前备用方案：本仓库通过 `autodl/image-profiles/*.toml` 约定 `output_dir`。
+
+### 镜像 Profile 标准
+
+不同训练镜像有不同的项目路径、conda 环境、启动命令、Web UI 端口和训练入口。平台如果能提供统一 profile，Agent 就能更可靠地自动化。
+
+建议 profile 至少包含：
+
+```toml
+id = "ai-toolkit"
+display_name = "AI-Toolkit AutoDL 镜像"
+
+[paths]
+project_dir = "/root/ai-toolkit"
+dataset_root = "/root/autodl-tmp/datasets"
+output_dir = "/root/autodl-tmp/output"
+log_dir = "/root/autodl-tmp/logs"
+
+[runtime]
+conda_env = "ai-toolkit"
+setup_command = "source /root/miniconda3/etc/profile.d/conda.sh && conda activate ai-toolkit"
+ui_command = "bash /root/start.sh"
+ui_port = 6006
+
+[trainer]
+type = "external"
+name = "aitoolkit-trainer"
+supported_tasks = ["image", "image_edit"]
+```
+
+当前备用方案：本仓库维护 `autodl/image-profiles/`。
+
+### 最小可用 API 组合
+
+如果平台要优先实现最小闭环，建议先支持：
+
+1. 上传目录到实例数据盘。
+2. 下载目录或指定后缀文件。
+3. 查询实例状态和 GPU 信息。
+4. 读取某个日志文件最近 N 行。
+5. 镜像提供机器可读的 profile。
+
+有了这些能力，Agent 就可以比较稳定地完成：
+
+```text
+本地训练集 -> 上传到云端 -> 调用镜像 trainer -> 监控日志/状态 -> 下载模型
+```
+
+所以本仓库当前采用分层方案：平台 API 负责实例生命周期；文件传输先用 SSH/SCP/rsync；具体训练逻辑交给每个镜像对应的 trainer。
+
 ## 给 Agent 怎么用
 
 克隆本仓库后，Agent 先读：
