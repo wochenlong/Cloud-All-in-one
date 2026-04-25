@@ -22,22 +22,58 @@
 
 ```
 Cloud-All-in-one/
-├── autodl/                          # AutoDL 云平台相关脚本
-│   ├── update-aitoolkitmodel.sh     # 模型符号链接更新脚本（主版本）
-│   └── update-aitoolkitmodel-new.sh # 参考版本
+├── autodl/                          # AutoDL 镜像维护资料
+│   ├── AGENTS.md                    # Agent 入口说明：环境设定 + skill 索引
+│   ├── config/
+│   │   └── env.sh                   # AutoDL 环境变量
+│   ├── docs/
+│   │   └── autodl-model-request.md  # 请求 AutoDL 补充共享模型的清单
+│   └── skills/
+│       ├── daily-ops/               # 日常启动、网络加速、模型检查
+│       ├── image-maintenance/       # 镜像维护、更新代码、保存前检查
+│       └── scripts-update/          # 模型链接脚本维护
 └── README.md
 ```
 
-## AutoDL 模型符号链接脚本
+## AutoDL 镜像维护
 
-`autodl/update-aitoolkitmodel.sh` 用于在 AutoDL 实例启动时自动创建模型符号链接，避免重复下载。
+`autodl/` 是一套面向 Agent 的 AutoDL 镜像维护资料。克隆本仓库后，Agent 先阅读：
 
-### 支持的模型
+```bash
+autodl/AGENTS.md
+```
+
+然后按任务选择对应 skill：
+
+| Skill | 用途 |
+|---|---|
+| `daily-ops` | 启动 UI、网络加速、共享模型检查、常见问题 |
+| `image-maintenance` | 更新 ai-toolkit、保留本地修改、保存镜像前检查 |
+| `scripts-update` | 更新模型符号链接脚本、同步新共享模型 |
+
+### 模型链接脚本
+
+脚本位置：
+
+```bash
+autodl/skills/scripts-update/scripts/update-aitoolkitmodel.sh
+```
+
+作用：将 AutoDL 共享目录 `/.autodl-model/data/` 中的模型链接到 `/root/ai-toolkit/`，避免重复下载。
+
+在 AutoDL 实例中执行：
+
+```bash
+bash autodl/skills/scripts-update/scripts/update-aitoolkitmodel.sh
+```
+
+### 当前支持的共享模型
 
 | 厂商 | 模型 |
 |---|---|
 | Black Forest Labs | FLUX.1-dev, FLUX.1-Kontext-dev, FLUX.2-dev, FLUX.2-klein-base-4B/9B |
 | Qwen | Qwen-Image, Qwen-Image-Edit-2509/2511, Qwen-Image-2512, Qwen3-4B/8B |
+| Baidu | ERNIE-Image |
 | Tongyi-MAI | Z-Image, Z-Image-Turbo |
 | Ostris | Z-Image-De-Turbo |
 | Lodestones | Zeta-Chroma |
@@ -45,19 +81,12 @@ Cloud-All-in-one/
 | AI Toolkit | Wan2.2-T2V-A14B, Wan2.2-I2V-A14B |
 | Mistral | Mistral-Small-3.1-24B-Instruct-2503 |
 
-### 附加功能
+### 链接脚本附加功能
 
 - FLUX.2-klein VAE 符号链接（从 FLUX.2-dev 共享 ae.safetensors）
 - 精度恢复适配器（Qwen/Wan/HiDream/FLUX Kontext 的 uint3/uint4 量化恢复）
 - Z-Image Turbo 训练适配器（v1/v2）
 - 只读文件系统容错处理
-
-### 使用方法
-
-```bash
-# 在 AutoDL 实例中执行
-bash autodl/update-aitoolkitmodel.sh
-```
 
 ## 支持平台
 
