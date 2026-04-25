@@ -71,5 +71,6 @@ Agent 处理任务前必须先确认 profile。如果无法判断镜像类型，
 - `config/env.sh` — 环境变量统一配置
 - `image-profiles/` — 镜像 profile，定义不同训练镜像的路径、环境、trainer
 - `docs/autodl-model-request.md` — 向 AutoDL 申请补充共享模型
+- `docs/maintenance-guide.md` — 维护本仓库、新增 skill/profile/trainer 和重构规则
 - `skills/scripts-update/` 下的脚本 — AI-Toolkit 模型符号链接管理
 - `https://github.com/wochenlong/aitoolkit-trainer` — 独立 AI-Toolkit 训练 agent 工具

@@ -180,6 +180,7 @@ autodl/AGENTS.md
 | 判断某个镜像的路径、环境、启动命令和 trainer | `autodl/image-profiles/*.toml` |
 | 维护 AI-Toolkit 镜像里的模型链接脚本 | `autodl/skills/scripts-update/SKILL.md` |
 | 更新 AI-Toolkit 镜像、保存镜像前检查 | `autodl/skills/image-maintenance/SKILL.md` |
+| 维护这个 GitHub 项目、新增 skill 或新镜像 | `autodl/docs/maintenance-guide.md` |
 | 在 AI-Toolkit 里真正开始训练 | https://github.com/wochenlong/aitoolkit-trainer |
 
 ## 设计思路
@@ -207,7 +208,8 @@ Cloud-All-in-one/
 │   ├── config/
 │   │   └── env.sh                   # AutoDL 环境变量
 │   ├── docs/
-│   │   └── autodl-model-request.md  # 请求 AutoDL 补充共享模型的清单
+│   │   ├── autodl-model-request.md  # 请求 AutoDL 补充共享模型的清单
+│   │   └── maintenance-guide.md     # 新增 skill/profile/trainer 和重构规则
 │   ├── image-profiles/              # 不同 AutoDL 镜像的路径、环境和 trainer 配置
 │   │   ├── ai-toolkit.toml
 │   │   └── lora-scripts.toml
