@@ -1,29 +1,68 @@
 # Cloud-All-in-one
 
-全网统一文生图的云端推理与训练仓库
+面向 Agent 的云端推理与训练资料库。
 
-## 包含模块
+这个仓库目前重点维护 **AutoDL 多镜像训练工作流**：让 Agent 知道怎么使用 AutoDL、怎么区分不同训练镜像、怎么维护镜像，以及什么时候调用独立训练工具。
 
-### 训练模块
+## 当前支持什么
 
-- [ostris/ai-toolkit](https://github.com/ostris/ai-toolkit) — 支持 FLUX、Qwen Image、Z-Image、Zeta-Chroma、Wan2.2、LTX-2/2.3 等模型的 LoRA/Full Fine-tuning 训练
-- [bmaltais/kohya_ss](https://github.com/bmaltais/kohya_ss) — SD/SDXL LoRA 训练
+### AutoDL 训练镜像
 
-### 推理模块
+| 镜像 | 状态 | 说明 | 地址 |
+|---|---|---|---|
+| AI-Toolkit | 已接入 | 支持 Qwen Image/Edit、FLUX、Wan、LTX 等 AI-Toolkit 训练流程；训练自动化由外部 `aitoolkit-trainer` 负责 | https://www.autodl.art/app/market/13 |
+| 秋叶训练包（Akegarasu/lora-scripts） | profile 草案 | 已建立 AutoDL 镜像 profile；实际训练命令和自动化流程待挂载镜像后校准 | https://www.autodl.art/app/market/11? |
 
-- [ComfyUI](https://github.com/comfyanonymous/ComfyUI) — 节点式推理工作流
-- [Stable Diffusion WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) — WebUI 推理
+### 独立训练工具
 
-### 数据处理模块
+AI-Toolkit 的训练逻辑已经拆到独立仓库：
 
-- [Eugeoter/waifuset](https://github.com/Eugeoter/waifuset)
+https://github.com/wochenlong/aitoolkit-trainer
+
+`Cloud-All-in-one/autodl` 负责 AutoDL 平台和镜像编排，`aitoolkit-trainer` 负责 AI-Toolkit 数据集验证、训练配置生成和 tmux 启动训练。
+
+## 给 Agent 怎么用
+
+克隆本仓库后，Agent 先读：
+
+```bash
+autodl/AGENTS.md
+```
+
+然后按任务分流：
+
+| 用户要做什么 | 看哪里 |
+|---|---|
+| 不确定当前是什么镜像，只想了解 AutoDL 通用规则 | `autodl/skills/autodl-common/SKILL.md` |
+| 启动 UI、开关网络加速、检查数据盘、排查常见问题 | `autodl/skills/daily-ops/SKILL.md` |
+| 用 AutoDL API 创建实例、上传数据、下载结果 | `autodl/skills/cloud-training/SKILL.md` |
+| 判断某个镜像的路径、环境、启动命令和 trainer | `autodl/image-profiles/*.toml` |
+| 维护 AI-Toolkit 镜像里的模型链接脚本 | `autodl/skills/scripts-update/SKILL.md` |
+| 更新 AI-Toolkit 镜像、保存镜像前检查 | `autodl/skills/image-maintenance/SKILL.md` |
+| 在 AI-Toolkit 里真正开始训练 | https://github.com/wochenlong/aitoolkit-trainer |
+
+## 设计思路
+
+这个仓库把 AutoDL 工作流拆成四层：
+
+1. **怎么用云端**  
+   `cloud-training` 负责 AutoDL API、实例创建、SSH/SCP/rsync、上传下载、关机释放。
+
+2. **怎么用 AutoDL**  
+   `autodl-common` 负责所有 AutoDL 镜像都通用的规则，例如 6006 端口、`/root/autodl-tmp` 数据盘、`/etc/network_turbo`、tmux 长任务。
+
+3. **怎么用/更新某个镜像**  
+   `image-profiles/` 描述不同镜像的路径和环境；AI-Toolkit 专属维护由 `image-maintenance` 和 `scripts-update` 处理。
+
+4. **怎么用镜像训练**  
+   训练逻辑不强行塞进 AutoDL 通用层。AI-Toolkit 使用独立的 `aitoolkit-trainer`；其他镜像以后可以有自己的 trainer。
 
 ## 仓库结构
 
-```
+```text
 Cloud-All-in-one/
-├── autodl/                          # AutoDL 镜像维护资料
-│   ├── AGENTS.md                    # Agent 入口说明：环境设定 + skill 索引
+├── autodl/
+│   ├── AGENTS.md                    # Agent 入口：层级说明和任务路由
 │   ├── config/
 │   │   └── env.sh                   # AutoDL 环境变量
 │   ├── docs/
@@ -32,35 +71,15 @@ Cloud-All-in-one/
 │   │   ├── ai-toolkit.toml
 │   │   └── lora-scripts.toml
 │   └── skills/
-│       ├── autodl-common/            # 所有 AutoDL 镜像通用规则
-│       ├── cloud-training/           # API 创建实例、上传训练集、调用外部训练工具、下载结果
-│       ├── daily-ops/               # 日常启动、网络加速、模型检查
-│       ├── image-maintenance/       # AI-Toolkit 镜像维护、更新代码、保存前检查
+│       ├── autodl-common/           # 所有 AutoDL 镜像通用规则
+│       ├── cloud-training/          # API 创建实例、上传训练集、调用 trainer、下载结果
+│       ├── daily-ops/               # 日常启动、网络加速、磁盘和常见问题
+│       ├── image-maintenance/       # AI-Toolkit 镜像维护
 │       └── scripts-update/          # AI-Toolkit 模型链接脚本维护
 └── README.md
 ```
 
-## AutoDL 镜像维护
-
-`autodl/` 是一套面向 Agent 的 AutoDL 镜像维护资料。克隆本仓库后，Agent 先阅读：
-
-```bash
-autodl/AGENTS.md
-```
-
-然后按任务选择对应 skill：
-
-| Skill / 模块 | 用途 |
-|---|---|
-| `autodl-common` | 所有 AutoDL 镜像通用规则：端口、数据盘、网络加速、tmux、保存前检查 |
-| `daily-ops` | 启动 UI、网络加速、共享模型检查、常见问题 |
-| `image-profiles` | 描述不同镜像的项目路径、环境、启动命令和 trainer |
-| `cloud-training` | 使用 AutoDL API 创建实例，配合 SSH/SCP/rsync 上传训练集并按 profile 调用 trainer |
-| `image-maintenance` | AI-Toolkit 镜像专属：更新 ai-toolkit、保留本地修改、保存镜像前检查 |
-| `scripts-update` | AI-Toolkit 镜像专属：更新模型符号链接脚本、同步新共享模型 |
-| 外部 `aitoolkit-trainer` | 验证数据集、生成 Qwen 图像/图像编辑训练配置、tmux 启动和输出定位 |
-
-### 多镜像 Profile
+## 镜像 Profiles
 
 AutoDL 通用能力和具体训练镜像解耦。镜像差异写在：
 
@@ -68,65 +87,32 @@ AutoDL 通用能力和具体训练镜像解耦。镜像差异写在：
 autodl/image-profiles/
 ```
 
-当前包含：
-
-| Profile | 状态 | 说明 |
+| Profile | 状态 | 用途 |
 |---|---|---|
-| `ai-toolkit.toml` | active | 当前 AI-Toolkit 训练镜像，调用外部 `aitoolkit-trainer` |
-| `lora-scripts.toml` | draft | Akegarasu/lora-scripts 待接入镜像，路径和命令待实际镜像确认 |
+| `ai-toolkit.toml` | active | 当前 AI-Toolkit AutoDL 镜像，调用外部 `aitoolkit-trainer` |
+| `lora-scripts.toml` | draft | 秋叶训练包镜像草案，待实际镜像确认 conda 环境、启动命令和训练流程 |
 
-### AI-Toolkit 训练工具
+## AI-Toolkit 镜像专属内容
 
-AI-Toolkit 训练逻辑已独立到：
-
-https://github.com/wochenlong/aitoolkit-trainer
-
-`autodl/` 只负责 AutoDL 平台、镜像维护、模型链接和云端编排；具体训练由远端克隆的 `aitoolkit-trainer` 执行。
-
-### 模型链接脚本
-
-脚本位置：
+AI-Toolkit 镜像使用 AutoDL 共享模型目录，模型链接脚本位于：
 
 ```bash
 autodl/skills/scripts-update/scripts/update-aitoolkitmodel.sh
 ```
 
-作用：将 AutoDL 共享目录 `/.autodl-model/data/` 中的模型链接到 `/root/ai-toolkit/`，避免重复下载。
+作用是将 AutoDL 共享目录 `/.autodl-model/data/` 中的模型链接到 `/root/ai-toolkit/`，避免重复下载。
 
-在 AutoDL 实例中执行：
+在 AutoDL AI-Toolkit 实例中执行：
 
 ```bash
 bash autodl/skills/scripts-update/scripts/update-aitoolkitmodel.sh
 ```
 
-### 当前支持的共享模型
+当前脚本覆盖的主要共享模型包括 FLUX.1/2、Qwen Image/Edit、ERNIE-Image、Z-Image、Zeta-Chroma、LTX、Wan2.2、Mistral 和相关精度恢复适配器。
 
-| 厂商 | 模型 |
-|---|---|
-| Black Forest Labs | FLUX.1-dev, FLUX.1-Kontext-dev, FLUX.2-dev, FLUX.2-klein-base-4B/9B |
-| Qwen | Qwen-Image, Qwen-Image-Edit-2509/2511, Qwen-Image-2512, Qwen3-4B/8B |
-| Baidu | ERNIE-Image |
-| Tongyi-MAI | Z-Image, Z-Image-Turbo |
-| Ostris | Z-Image-De-Turbo |
-| Lodestones | Zeta-Chroma |
-| Lightricks | LTX-2, LTX-2.3 |
-| AI Toolkit | Wan2.2-T2V-A14B, Wan2.2-I2V-A14B |
-| Mistral | Mistral-Small-3.1-24B-Instruct-2503 |
+## 相关项目
 
-### 链接脚本附加功能
-
-- FLUX.2-klein VAE 符号链接（从 FLUX.2-dev 共享 ae.safetensors）
-- 精度恢复适配器（Qwen/Wan/HiDream/FLUX Kontext 的 uint3/uint4 量化恢复）
-- Z-Image Turbo 训练适配器（v1/v2）
-- 只读文件系统容错处理
-
-## 支持平台
-
-### 1. [AutoDL](https://www.autodl.com/home)
-
-当前支持的 AutoDL 训练镜像：
-
-| 镜像 | 用途 | 地址 |
-|---|---|---|
-| AI-Toolkit | Qwen Image/Edit、FLUX、Wan、LTX 等 AI-Toolkit 训练流程 | https://www.autodl.art/app/market/13 |
-| 秋叶训练包（Akegarasu/lora-scripts） | lora-scripts 训练镜像，当前已建立 profile 草案，待实际镜像校准自动训练流程 | https://www.autodl.art/app/market/11? |
+- [aitoolkit-trainer](https://github.com/wochenlong/aitoolkit-trainer) — 面向 Agent 的 AI-Toolkit 训练助手
+- [ostris/ai-toolkit](https://github.com/ostris/ai-toolkit) — AI-Toolkit 上游项目
+- [Akegarasu/lora-scripts](https://github.com/Akegarasu/lora-scripts) — 秋叶训练包上游项目
+- [AutoDL](https://www.autodl.com/home) — GPU 云平台
