@@ -49,6 +49,30 @@ AI-Toolkit 支持的模型可粗略分为四类：
 
 ## 数据集格式
 
+## 已确认的数据规则
+
+### Caption 规则
+
+- 图片和 caption **不是硬性必须一一同名**，但第一版自动化要求尽量同名，最稳定。
+- 代码会优先读取同名 caption：`image001.png` -> `image001.txt`。
+- 没有同名 caption 时，会尝试读取数据集目录下的 `default.txt`。
+- 如果配置里设置了 `default_caption`，空 caption 或缺失 caption 会使用它兜底。
+- `caption_ext: "txt"` 会被规范成 `.txt`，所以配置里写 `txt` 即可。
+- JSON caption 也可用，字段名为 `caption`，但第一版不主动支持 JSON，避免复杂化。
+
+### Trigger Word 规则
+
+- `trigger_word` 支持统一触发词。
+- 如果 caption 中没有 trigger，AI-Toolkit 会自动把 trigger 加入 caption。
+- 如果 caption 中写了 `[trigger]`，会替换成真实 trigger word。
+- 如果没有 caption 且设置了 trigger，caption 会变成 trigger word。
+- Qwen Image Edit 使用 `cache_text_embeddings: true` 时，不建议依赖 trigger word 动态注入；第一版优先要求 caption 中直接写好编辑指令。
+
+### 图片扩展名规则
+
+- 第一版统一要求小写扩展名：`.jpg`、`.jpeg`、`.png`、`.webp`。
+- 不接受 `.JPG`、`.PNG` 这类大写扩展名，尤其是 Qwen Image Edit 的 control 图匹配容易因此失败。
+
 ### 图像生成数据集
 
 Qwen Image 普通 LoRA 训练默认格式：
@@ -72,6 +96,16 @@ Qwen Image 普通 LoRA 训练默认格式：
 ### 图像编辑数据集
 
 Qwen Image Edit 需要**目标图像目录**和**控制图像目录**，文件名必须匹配。
+
+已确认约定：
+
+- target 是训练目标，也就是“编辑后 / 期望输出”的图片。
+- control 是输入图，也就是“编辑前 / 参考输入”的图片。
+- caption 写在 target 图片旁边，语义应是**编辑指令**，不是普通图像描述。
+- control 图不需要 caption。
+- target 与 control 通过 basename 匹配：`target/0001.png` 匹配 `control_1/0001.png`。
+- 多 control 时，`control_1`、`control_2`、`control_3` 按列表顺序传入模型。
+- 文件数量和 basename 应完全对齐；否则容易报 `Missing control images for QwenImageEditPlusModel`。
 
 单控制图（旧版 `Qwen/Qwen-Image-Edit`）：
 
@@ -292,6 +326,8 @@ find /root/autodl-tmp/output -maxdepth 4 -type f | sort
 | OOM | 降低分辨率、确认 `batch_size: 1`、开启 `gradient_checkpointing`、`quantize`、`low_vram` |
 | 重新下载模型 | 确认执行过 `/root/update-aitoolkitmodel.sh`，检查 `/root/ai-toolkit/<org>/<model>` 链接 |
 | caption 不生效 | 检查 `.txt` 是否与图片同名，`caption_ext` 是否为 `txt` |
+| Qwen Edit 报 `Missing control images` | 检查 `control_path` 是否存在、target/control basename 是否一致、扩展名是否小写、是否启用 `cache_text_embeddings: true` |
+| Qwen Edit 学得随机 | 检查 target 与 control 是否错配；caption 是否是编辑指令而不是目标图描述 |
 | 训练跑在系统盘 | 检查 `training_folder` 是否为 `/root/autodl-tmp/output` |
 | SSH 断开训练停了 | 没用 tmux，重新按 tmux 方式启动 |
 
