@@ -1,0 +1,43 @@
+# AI-Toolkit training skill defaults.
+# This file only applies to autodl/skills/ai-toolkit-training.
+# Users may edit these values before asking the agent to generate a training job.
+
+[paths]
+ai_toolkit_dir = "/root/ai-toolkit"
+dataset_root = "/root/autodl-tmp/datasets"
+job_config_dir = "/root/autodl-tmp/jobs"
+output_dir = "/root/autodl-tmp/output"
+log_dir = "/root/autodl-tmp/logs"
+model_link_script = "/root/update-aitoolkitmodel.sh"
+
+[training]
+# Use the value from the official ai-toolkit example config when present.
+# If an example/template does not define steps, use fallback_steps.
+prefer_official_steps = true
+fallback_steps = 5000
+
+# Keep other training parameters from official example configs by default.
+preserve_template_defaults = true
+
+[dataset]
+caption_ext = "txt"
+require_captions = true
+support_auto_captioning = false
+require_lowercase_image_extensions = true
+allowed_image_extensions = [".jpg", ".jpeg", ".png", ".webp"]
+
+[qwen_image]
+template = "/root/ai-toolkit/config/examples/train_lora_qwen_image_24gb.yaml"
+model_name_or_path = "Qwen/Qwen-Image"
+arch = "qwen_image"
+
+[qwen_image_edit]
+template = "/root/ai-toolkit/config/examples/train_lora_qwen_image_edit_2509_32gb.yaml"
+model_name_or_path = "Qwen/Qwen-Image-Edit-2509"
+arch = "qwen_image_edit_plus"
+max_control_images = 3
+
+[runtime]
+tmux_session_prefix = "train"
+use_tmux = true
+tee_logs = true

@@ -14,6 +14,19 @@ description: 使用 AI-Toolkit 启动训练任务。用于数据集已上传到 
 
 本 skill 不负责创建/释放实例，也不负责文件传输。
 
+## 全局默认配置
+
+本 skill 的默认值写在同目录的 [training.defaults.toml](training.defaults.toml)。Agent 在生成训练任务前必须先读取该 TOML。
+
+用户可通过修改它来自定义：数据集根目录、训练配置目录、输出目录、日志目录、Qwen 默认模板、fallback 训练步数等。
+
+默认原则：
+
+- 训练参数优先保留 AI-Toolkit 官方示例配置。
+- 官方示例中已有 `steps` 时，不覆盖。
+- 如果模板没有 `steps`，使用 `fallback_steps = 5000`。
+- caption 是强制要求；自动打标脚本尚未完成，第一版不支持无 caption 训练。
+
 ## 第一版支持范围
 
 AI-Toolkit 支持的模型可粗略分为四类：
@@ -47,16 +60,14 @@ AI-Toolkit 支持的模型可粗略分为四类：
 
 不要把数据集、模型权重、训练输出放到 `/root/` 系统盘。
 
-## 数据集格式
-
 ## 已确认的数据规则
 
 ### Caption 规则
 
-- 图片和 caption **不是硬性必须一一同名**，但第一版自动化要求尽量同名，最稳定。
+- 第一版自动化要求图片和 caption 一一同名，否则不开始训练。
 - 代码会优先读取同名 caption：`image001.png` -> `image001.txt`。
-- 没有同名 caption 时，会尝试读取数据集目录下的 `default.txt`。
-- 如果配置里设置了 `default_caption`，空 caption 或缺失 caption 会使用它兜底。
+- 源码支持 `default.txt` 和 `default_caption` 兜底，但本 skill 第一版不把它们作为训练入口。
+- 无 caption 的数据集需要先通过打标脚本生成 caption；打标脚本尚未完成，暂不支持。
 - `caption_ext: "txt"` 会被规范成 `.txt`，所以配置里写 `txt` 即可。
 - JSON caption 也可用，字段名为 `caption`，但第一版不主动支持 JSON，避免复杂化。
 
@@ -66,7 +77,9 @@ AI-Toolkit 支持的模型可粗略分为四类：
 - 如果 caption 中没有 trigger，AI-Toolkit 会自动把 trigger 加入 caption。
 - 如果 caption 中写了 `[trigger]`，会替换成真实 trigger word。
 - 如果没有 caption 且设置了 trigger，caption 会变成 trigger word。
-- Qwen Image Edit 使用 `cache_text_embeddings: true` 时，不建议依赖 trigger word 动态注入；第一版优先要求 caption 中直接写好编辑指令。
+- 第一版默认用户在打标环节已经处理好 trigger word。
+- Agent 不主动新增、修改或注入 trigger word，除非用户明确要求。
+- Qwen Image Edit 的 caption 应直接写好编辑指令。
 
 ### 图片扩展名规则
 
@@ -90,8 +103,8 @@ Qwen Image 普通 LoRA 训练默认格式：
 
 - 图片支持 `jpg`、`jpeg`、`png`
 - caption 文件与图片同名，扩展名为 `.txt`
-- caption 为空时，配置里应设置 `default_caption`
-- 触发词可写入 caption，也可用配置里的 `trigger_word`
+- caption 缺失或为空时，停止并提示用户先打标
+- 触发词默认视为已包含在 caption 中
 
 ### 图像编辑数据集
 
@@ -220,7 +233,7 @@ model:
 
 ## 必改字段
 
-每个训练配置至少修改：
+每个训练配置至少修改路径、任务名和数据集字段。训练参数默认沿用官方模板：
 
 ```yaml
 config:
@@ -231,12 +244,6 @@ config:
         - folder_path: "/root/autodl-tmp/datasets/<job_name>"
           caption_ext: "txt"
           resolution: [512, 768, 1024]
-      train:
-        steps: 2000
-        batch_size: 1
-        gradient_checkpointing: true
-        optimizer: "adamw8bit"
-        dtype: bf16
       model:
         name_or_path: "<本地可解析模型路径或 HF id>"
 ```
@@ -244,9 +251,8 @@ config:
 推荐：
 
 - `training_folder` 使用绝对路径 `/root/autodl-tmp/output`
-- 24GB/32GB 卡优先 `batch_size: 1`
-- 大模型优先打开 `quantize: true`、`low_vram: true`
-- Qwen/Wan 等大模型优先启用 `cache_text_embeddings: true`
+- `train.*` 参数默认不改，沿用官方示例
+- 官方模板没有 `steps` 时，使用 `training.defaults.toml` 的 `fallback_steps`
 - `push_to_hub: false`，不要默认上传 HuggingFace
 - 图像编辑必须修改 `control_path` 和 `sample.samples[*].ctrl_img*`
 
@@ -335,15 +341,18 @@ find /root/autodl-tmp/output -maxdepth 4 -type f | sort
 
 当用户说“帮我训练一个模型”时：
 
-1. 询问训练类型：图像生成还是图像编辑
-2. 若图像生成，默认使用 `Qwen/Qwen-Image`
-3. 若图像编辑，默认使用 `Qwen/Qwen-Image-Edit-2509`
-4. 询问数据集路径、job 名、训练步数、触发词、样例 prompt
-5. 图像编辑还要询问 control 图目录数量和路径
-6. 检查数据集目录、caption 数量、control 文件名匹配情况
-7. 选择对应 Qwen 官方示例配置
-8. 复制到 `/root/autodl-tmp/jobs/<job_name>.yaml`
-9. 修改必改字段
-10. 执行 `/root/update-aitoolkitmodel.sh`
-11. 用 tmux 启动训练
-12. 返回 tmux 会话名、日志路径、输出路径
+1. 读取 `training.defaults.toml`
+2. 询问训练类型：图像生成还是图像编辑
+3. 若图像生成，默认使用 `Qwen/Qwen-Image`
+4. 若图像编辑，默认使用 `Qwen/Qwen-Image-Edit-2509`
+5. 询问数据集路径、job 名、样例 prompt
+6. 图像编辑还要询问 control 图目录数量和路径
+7. 检查数据集目录、caption 数量、空 caption、control 文件名匹配情况
+8. 若任意训练图片缺 caption 或 caption 为空，停止并要求先打标
+9. 选择对应 Qwen 官方示例配置
+10. 复制到 `/root/autodl-tmp/jobs/<job_name>.yaml`
+11. 修改必改字段；训练参数默认沿用官方模板
+12. 如模板没有 `steps`，设置为 TOML 中的 `fallback_steps`
+13. 执行 `/root/update-aitoolkitmodel.sh`
+14. 用 tmux 启动训练
+15. 返回 tmux 会话名、日志路径、输出路径
