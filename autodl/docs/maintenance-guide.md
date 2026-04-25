@@ -26,7 +26,7 @@
 
 新增 skill 步骤：
 
-1. 在 `autodl/skills/<skill-name>/SKILL.md` 新建文档。
+1. 在 `autodl/skills/SKILL_NAME/SKILL.md` 新建文档。
 2. 在 frontmatter 写清楚 `name` 和 `description`。
 3. 写明适用边界：负责什么、不负责什么。
 4. 写明输入、输出、检查命令和失败处理。
@@ -40,7 +40,7 @@
 profile 位置：
 
 ```bash
-autodl/image-profiles/<image-id>.toml
+autodl/image-profiles/IMAGE_ID.toml
 ```
 
 建议至少包含：
@@ -100,7 +100,7 @@ profile 状态约定：
 命名建议：
 
 ```text
-<framework>-trainer
+FRAMEWORK-trainer
 ```
 
 例如：
@@ -113,7 +113,7 @@ profile 状态约定：
 
 1. 建立独立 trainer 仓库。
 2. trainer 仓库提供 `AGENTS.md`、`SKILL.md`、默认 TOML 和脚本。
-3. 在对应 `image-profiles/<image-id>.toml` 的 `[trainer]` 中填写：
+3. 在对应 `image-profiles/IMAGE_ID.toml` 的 `[trainer]` 中填写：
 
 ```toml
 [trainer]
@@ -143,7 +143,7 @@ supported_tasks = ["image", "image_edit"]
 | 问题 | 处理 |
 |---|---|
 | 通用逻辑和镜像逻辑混在一起 | 通用部分移到 `autodl-common`，镜像差异移到 profile |
-| 训练逻辑太重 | 独立成 `<framework>-trainer` |
+| 训练逻辑太重 | 独立成 `FRAMEWORK-trainer` |
 | 云端编排和训练执行混在一起 | `cloud-training` 只保留实例/传输/远程调用 |
 | README 过长 | README 保留主线，细节移到 `autodl/docs/` |
 
@@ -178,7 +178,7 @@ git status --short
 ```bash
 git status --short
 git diff --stat
-git add <changed-files>
+git add CHANGED_FILES
 git commit -m "docs(autodl): describe the change"
 git push origin main
 ```
@@ -196,7 +196,7 @@ git push origin main
 
 - `README.md` 能让新读者一眼理解当前主线。
 - `autodl/AGENTS.md` 的任务路由仍然准确。
-- 新镜像已经有 `image-profiles/<id>.toml`。
+- 新镜像已经有 `image-profiles/IMAGE_ID.toml`。
 - 新 skill 已加入 `autodl/AGENTS.md`。
 - 专属逻辑没有误写成通用逻辑。
 - token、密码、私钥没有进入 git diff。
