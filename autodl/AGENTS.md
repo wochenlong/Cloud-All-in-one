@@ -15,6 +15,7 @@
 | [scripts-update](skills/scripts-update/SKILL.md) | 更新模型链接脚本、同步模型清单 |
 | [image-maintenance](skills/image-maintenance/SKILL.md) | 更新代码（保留本地改动）、保存镜像检查、环境信息 |
 | [daily-ops](skills/daily-ops/SKILL.md) | 启动 UI、网络加速、模型检查、常见问题速查 |
+| [cloud-training](skills/cloud-training/SKILL.md) | 使用 AutoDL API 编排云端训练、上传数据、下载结果 |
 
 ## 其他资源
 

@@ -29,6 +29,7 @@ Cloud-All-in-one/
 │   ├── docs/
 │   │   └── autodl-model-request.md  # 请求 AutoDL 补充共享模型的清单
 │   └── skills/
+│       ├── cloud-training/           # API 创建实例、上传训练集、下载结果
 │       ├── daily-ops/               # 日常启动、网络加速、模型检查
 │       ├── image-maintenance/       # 镜像维护、更新代码、保存前检查
 │       └── scripts-update/          # 模型链接脚本维护
@@ -50,6 +51,7 @@ autodl/AGENTS.md
 | `daily-ops` | 启动 UI、网络加速、共享模型检查、常见问题 |
 | `image-maintenance` | 更新 ai-toolkit、保留本地修改、保存镜像前检查 |
 | `scripts-update` | 更新模型符号链接脚本、同步新共享模型 |
+| `cloud-training` | 使用 AutoDL API 创建实例，配合 SSH/SCP/rsync 上传训练集并下载结果 |
 
 ### 模型链接脚本
 
