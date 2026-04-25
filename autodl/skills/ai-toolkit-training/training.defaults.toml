@@ -1,43 +1,73 @@
-# AI-Toolkit training skill defaults.
-# This file only applies to autodl/skills/ai-toolkit-training.
-# Users may edit these values before asking the agent to generate a training job.
+# AI-Toolkit 训练 skill 默认配置。
+# 仅作用于 autodl/skills/ai-toolkit-training。
+# 用户可以在让 agent 生成训练任务前修改这些值。
 
 [paths]
+# AI-Toolkit 项目目录
 ai_toolkit_dir = "/root/ai-toolkit"
+
+# 数据集根目录，建议放数据盘，避免占用系统盘镜像空间
 dataset_root = "/root/autodl-tmp/datasets"
+
+# 训练配置输出目录
 job_config_dir = "/root/autodl-tmp/jobs"
+
+# 训练结果输出目录
 output_dir = "/root/autodl-tmp/output"
+
+# 训练日志目录
 log_dir = "/root/autodl-tmp/logs"
+
+# 模型符号链接脚本
 model_link_script = "/root/update-aitoolkitmodel.sh"
 
 [training]
-# Use the value from the official ai-toolkit example config when present.
-# If an example/template does not define steps, use fallback_steps.
+# 优先使用 AI-Toolkit 官方示例配置里的训练步数
 prefer_official_steps = true
+
+# 如果模板没有定义 steps，则使用这个兜底步数
 fallback_steps = 5000
 
-# Keep other training parameters from official example configs by default.
+# 默认保留官方示例中的其他训练参数，不主动调参
 preserve_template_defaults = true
 
 [dataset]
+# caption 文件扩展名。写 txt 即可，AI-Toolkit 会自动识别为 .txt
 caption_ext = "txt"
+
+# 第一版强制要求已有 caption；没有 caption 不开始训练
 require_captions = true
+
+# 自动打标脚本尚未完成，暂不支持无 caption 自动打标
 support_auto_captioning = false
+
+# 强制要求图片扩展名小写，避免 Qwen Edit control 图匹配失败
 require_lowercase_image_extensions = true
+
+# 第一版允许的图片扩展名
 allowed_image_extensions = [".jpg", ".jpeg", ".png", ".webp"]
 
 [qwen_image]
+# Qwen 图像生成训练模板
 template = "/root/ai-toolkit/config/examples/train_lora_qwen_image_24gb.yaml"
 model_name_or_path = "Qwen/Qwen-Image"
 arch = "qwen_image"
 
 [qwen_image_edit]
+# Qwen 图像编辑训练模板，默认使用 2509 / edit_plus
 template = "/root/ai-toolkit/config/examples/train_lora_qwen_image_edit_2509_32gb.yaml"
 model_name_or_path = "Qwen/Qwen-Image-Edit-2509"
 arch = "qwen_image_edit_plus"
+
+# Qwen Image Edit Plus 最多支持 3 路 control 图
 max_control_images = 3
 
 [runtime]
+# tmux 会话名前缀，最终形如 train_<job_name>
 tmux_session_prefix = "train"
+
+# 长时间训练必须使用 tmux，防止 SSH 断开导致训练中断
 use_tmux = true
+
+# 是否用 tee 同时输出到终端和日志文件
 tee_logs = true
