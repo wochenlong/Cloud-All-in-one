@@ -14,6 +14,27 @@ description: 使用 AI-Toolkit 启动训练任务。用于数据集已上传到 
 
 本 skill 不负责创建/释放实例，也不负责文件传输。
 
+## 第一版支持范围
+
+AI-Toolkit 支持的模型可粗略分为四类：
+
+1. 图像生成
+2. 图像编辑
+3. 视频（文生视频 / 图生视频）
+4. 音频
+
+第一版只正式支持**图像生成**和**图像编辑**，以 Qwen 系列作为标准样板：
+
+| 类型 | 首选模型 | 示例配置 | 状态 |
+|---|---|---|---|
+| 图像生成 | `Qwen/Qwen-Image` | `train_lora_qwen_image_24gb.yaml` | 第一版支持 |
+| 图像编辑 | `Qwen/Qwen-Image-Edit-2509` | `train_lora_qwen_image_edit_2509_32gb.yaml` | 第一版支持 |
+| 图像编辑（旧版） | `Qwen/Qwen-Image-Edit` | `train_lora_qwen_image_edit_32gb.yaml` | 可作为兼容参考 |
+| 视频 | Wan / LTX | 暂不作为第一版目标 | 后续支持 |
+| 音频 | ACE-Step | 暂不作为第一版目标 | 后续支持 |
+
+如果用户指定 FLUX.2 Klein、Wan、LTX、音频等模型，先说明该 skill 的第一版重点是 Qwen 图像/图像编辑；确需继续时，再按最接近的官方示例谨慎修改。
+
 ## 路径约定
 
 | 类型 | 路径 | 说明 |
@@ -28,7 +49,9 @@ description: 使用 AI-Toolkit 启动训练任务。用于数据集已上传到 
 
 ## 数据集格式
 
-图片训练默认格式：
+### 图像生成数据集
+
+Qwen Image 普通 LoRA 训练默认格式：
 
 ```text
 /root/autodl-tmp/datasets/my_job/
@@ -46,7 +69,55 @@ description: 使用 AI-Toolkit 启动训练任务。用于数据集已上传到 
 - caption 为空时，配置里应设置 `default_caption`
 - 触发词可写入 caption，也可用配置里的 `trigger_word`
 
-视频训练（如 Wan/LTX）可以放视频文件，但必须在配置里明确 `num_frames`、分辨率和采样策略。
+### 图像编辑数据集
+
+Qwen Image Edit 需要**目标图像目录**和**控制图像目录**，文件名必须匹配。
+
+单控制图（旧版 `Qwen/Qwen-Image-Edit`）：
+
+```text
+/root/autodl-tmp/datasets/my_edit/
+├── target/
+│   ├── 0001.png
+│   ├── 0001.txt
+│   └── 0002.png
+└── control/
+    ├── 0001.png
+    └── 0002.png
+```
+
+配置字段：
+
+```yaml
+datasets:
+  - folder_path: "/root/autodl-tmp/datasets/my_edit/target"
+    control_path: "/root/autodl-tmp/datasets/my_edit/control"
+    caption_ext: "txt"
+```
+
+多控制图（推荐 `Qwen/Qwen-Image-Edit-2509` / `qwen_image_edit_plus`）：
+
+```text
+/root/autodl-tmp/datasets/my_edit_plus/
+├── target/
+├── control_1/
+├── control_2/
+└── control_3/
+```
+
+配置字段：
+
+```yaml
+datasets:
+  - folder_path: "/root/autodl-tmp/datasets/my_edit_plus/target"
+    control_path:
+      - "/root/autodl-tmp/datasets/my_edit_plus/control_1"
+      - "/root/autodl-tmp/datasets/my_edit_plus/control_2"
+      - "/root/autodl-tmp/datasets/my_edit_plus/control_3"
+    caption_ext: "txt"
+```
+
+视频和音频训练暂不纳入第一版标准流程。
 
 ## 训练配置来源
 
@@ -57,20 +128,61 @@ cp /root/ai-toolkit/config/examples/train_lora_qwen_image_24gb.yaml \
   /root/autodl-tmp/jobs/my_job.yaml
 ```
 
-常用示例：
+第一版常用示例：
 
 | 目标模型 | 示例配置 |
 |---|---|
-| FLUX.1/FLUX.1 Kontext | `train_lora_flux_24gb.yaml`, `train_lora_flux_kontext_24gb.yaml` |
 | Qwen Image | `train_lora_qwen_image_24gb.yaml` |
-| Qwen Image Edit | `train_lora_qwen_image_edit_2509_32gb.yaml`, `train_lora_qwen_image_edit_32gb.yaml` |
-| Wan2.2 14B | `train_lora_wan22_14b_24gb.yaml` |
-| Chroma | `train_lora_chroma_24gb.yaml` |
-| Flex.2 | `train_lora_flex2_24gb.yaml` |
-| OmniGen2 | `train_lora_omnigen2_24gb.yaml` |
-| HiDream | `train_lora_hidream_48.yaml` |
+| Qwen Image Edit 2509 | `train_lora_qwen_image_edit_2509_32gb.yaml` |
+| Qwen Image Edit legacy | `train_lora_qwen_image_edit_32gb.yaml` |
 
-如果没有现成示例，先从最接近的 LoRA 配置复制，再根据模型 `arch` 和 `name_or_path` 修改。
+其他模型先视为扩展目标。不要在第一版自动化里默认生成视频或音频训练配置。
+
+## Qwen Image 标准配置要点
+
+基于 `train_lora_qwen_image_24gb.yaml`：
+
+```yaml
+model:
+  name_or_path: "Qwen/Qwen-Image"
+  arch: "qwen_image"
+  quantize: true
+  qtype: "uint3|ostris/accuracy_recovery_adapters/qwen_image_torchao_uint3.safetensors"
+  quantize_te: true
+  qtype_te: "qfloat8"
+  low_vram: true
+train:
+  batch_size: 1
+  cache_text_embeddings: true
+  train_text_encoder: false
+```
+
+## Qwen Image Edit 标准配置要点
+
+优先使用 `train_lora_qwen_image_edit_2509_32gb.yaml`：
+
+```yaml
+model:
+  name_or_path: "Qwen/Qwen-Image-Edit-2509"
+  arch: "qwen_image_edit_plus"
+  quantize: true
+  qtype: "uint3|ostris/accuracy_recovery_adapters/qwen_image_edit_2509_torchao_uint3.safetensors"
+  quantize_te: true
+  qtype_te: "qfloat8"
+  low_vram: true
+train:
+  batch_size: 1
+  cache_text_embeddings: true
+  train_text_encoder: false
+```
+
+如果用户明确要旧版 `Qwen/Qwen-Image-Edit`，使用：
+
+```yaml
+model:
+  name_or_path: "Qwen/Qwen-Image-Edit"
+  arch: "qwen_image_edit"
+```
 
 ## 必改字段
 
@@ -102,6 +214,7 @@ config:
 - 大模型优先打开 `quantize: true`、`low_vram: true`
 - Qwen/Wan 等大模型优先启用 `cache_text_embeddings: true`
 - `push_to_hub: false`，不要默认上传 HuggingFace
+- 图像编辑必须修改 `control_path` 和 `sample.samples[*].ctrl_img*`
 
 ## 模型路径约定
 
@@ -186,11 +299,15 @@ find /root/autodl-tmp/output -maxdepth 4 -type f | sort
 
 当用户说“帮我训练一个模型”时：
 
-1. 询问模型类型、数据集路径、job 名、训练步数、触发词、样例 prompt
-2. 检查数据集目录和 caption 数量
-3. 选择最接近的官方示例配置
-4. 复制到 `/root/autodl-tmp/jobs/<job_name>.yaml`
-5. 修改必改字段
-6. 执行 `/root/update-aitoolkitmodel.sh`
-7. 用 tmux 启动训练
-8. 返回 tmux 会话名、日志路径、输出路径
+1. 询问训练类型：图像生成还是图像编辑
+2. 若图像生成，默认使用 `Qwen/Qwen-Image`
+3. 若图像编辑，默认使用 `Qwen/Qwen-Image-Edit-2509`
+4. 询问数据集路径、job 名、训练步数、触发词、样例 prompt
+5. 图像编辑还要询问 control 图目录数量和路径
+6. 检查数据集目录、caption 数量、control 文件名匹配情况
+7. 选择对应 Qwen 官方示例配置
+8. 复制到 `/root/autodl-tmp/jobs/<job_name>.yaml`
+9. 修改必改字段
+10. 执行 `/root/update-aitoolkitmodel.sh`
+11. 用 tmux 启动训练
+12. 返回 tmux 会话名、日志路径、输出路径

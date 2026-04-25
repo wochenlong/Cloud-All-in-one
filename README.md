@@ -53,7 +53,7 @@ autodl/AGENTS.md
 | `image-maintenance` | 更新 ai-toolkit、保留本地修改、保存镜像前检查 |
 | `scripts-update` | 更新模型符号链接脚本、同步新共享模型 |
 | `cloud-training` | 使用 AutoDL API 创建实例，配合 SSH/SCP/rsync 上传训练集并下载结果 |
-| `ai-toolkit-training` | 数据集已上传后，生成 AI-Toolkit 配置、用 tmux 启动训练、定位输出 |
+| `ai-toolkit-training` | 数据集已上传后，优先支持 Qwen 图像/图像编辑训练配置、tmux 启动和输出定位 |
 
 ### 模型链接脚本
 
