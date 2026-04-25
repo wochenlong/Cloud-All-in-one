@@ -60,6 +60,33 @@ AI-Toolkit 支持的模型可粗略分为四类：
 
 不要把数据集、模型权重、训练输出放到 `/root/` 系统盘。
 
+## 镜像内置测试数据集
+
+当前 AutoDL 镜像内置了用于测试训练流程的数据集：
+
+| 用途 | 路径 | 说明 |
+|---|---|---|
+| 图像生成 / 文生图测试 | `/root/ai-toolkit/datasets/flux` | 21 张图片 + 21 个同名 caption |
+| 图像编辑 target | `/root/ai-toolkit/datasets/edit` | 20 张目标图 + 20 个同名 caption |
+| 图像编辑 control | `/root/ai-toolkit/datasets/images` | 20 张输入图，无 caption，与 target basename 对齐 |
+
+这些路径也写在 [training.defaults.toml](training.defaults.toml) 的 `[test_datasets]` 中。
+
+测试 Qwen Image 时，可直接使用：
+
+```yaml
+folder_path: "/root/ai-toolkit/datasets/flux"
+```
+
+测试 Qwen Image Edit 时，可直接使用：
+
+```yaml
+folder_path: "/root/ai-toolkit/datasets/edit"
+control_path: "/root/ai-toolkit/datasets/images"
+```
+
+注意：这些测试数据集位于 `/root/ai-toolkit/datasets`，是镜像内置小数据集；用户正式训练数据仍建议放 `/root/autodl-tmp/datasets/<job_name>/`。
+
 ## 已确认的数据规则
 
 ### Caption 规则

@@ -47,6 +47,18 @@ require_lowercase_image_extensions = true
 # 第一版允许的图片扩展名
 allowed_image_extensions = [".jpg", ".jpeg", ".png", ".webp"]
 
+[test_datasets]
+# 镜像内置测试数据集。用于 agent 验证 Qwen 图像训练流程。
+# 这是一个文生图/图像生成测试集，包含 21 张图片和 21 个同名 caption。
+image_generation = "/root/ai-toolkit/datasets/flux"
+
+# 镜像内置图像编辑测试集：target 是编辑后的目标图，包含同名 caption。
+image_edit_target = "/root/ai-toolkit/datasets/edit"
+
+# 镜像内置图像编辑测试集：control 是编辑前/输入图，不需要 caption。
+# target/control 文件 basename 已经对齐，例如 object_removal_01.png。
+image_edit_control = "/root/ai-toolkit/datasets/images"
+
 [qwen_image]
 # Qwen 图像生成训练模板
 template = "/root/ai-toolkit/config/examples/train_lora_qwen_image_24gb.yaml"
