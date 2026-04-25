@@ -1,0 +1,43 @@
+# AutoDL Akegarasu/lora-scripts 镜像 profile 草案
+# 这是待接入训练镜像模板，具体路径和环境需要按实际镜像校准。
+
+id = "lora-scripts"
+display_name = "Akegarasu/lora-scripts AutoDL 镜像"
+status = "draft"
+upstream = "https://github.com/Akegarasu/lora-scripts"
+
+[paths]
+project_dir = "/root/lora-scripts"
+dataset_root = "/root/autodl-tmp/datasets"
+job_config_dir = "/root/autodl-tmp/jobs"
+output_dir = "/root/autodl-tmp/output"
+log_dir = "/root/autodl-tmp/logs"
+shared_model_dir = "/.autodl-model/data"
+
+[runtime]
+# TODO: 挂载实际镜像后确认 conda 环境名和启动命令。
+conda_env = ""
+setup_command = ""
+ui_command = ""
+ui_port = 6006
+tmux_ui_session = ""
+
+[maintenance]
+# lora-scripts 镜像暂时只使用通用 AutoDL 检查；如有专属更新流程，再新增 skill。
+update_skill = "autodl-common"
+model_link_skill = ""
+model_link_script = ""
+
+[trainer]
+# TODO: 如果后续需要自动训练，可独立建立 lora-scripts-trainer。
+type = "manual"
+name = ""
+repo = ""
+install_dir = ""
+profile = "autodl"
+supported_tasks = ["image"]
+
+[test_datasets]
+image_generation = ""
+image_edit_target = ""
+image_edit_control = ""

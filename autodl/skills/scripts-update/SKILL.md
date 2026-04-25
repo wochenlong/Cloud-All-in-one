@@ -1,9 +1,11 @@
 ---
 name: scripts-update
-description: 更新模型符号链接脚本和模型清单。当 ai-toolkit 新增模型支持或 AutoDL 共享目录有变化时使用。
+description: AI-Toolkit 镜像模型符号链接脚本和模型清单维护。当 ai-toolkit 新增模型支持或 AutoDL 共享目录有变化时使用。
 ---
 
-# 脚本更新
+# AI-Toolkit 脚本更新
+
+本 skill 只适用于 `image-profiles/ai-toolkit.toml`。其他训练镜像不要直接使用 `/root/update-aitoolkitmodel.sh`，应先新增对应 image profile 和专属链接策略。
 
 维护 `update-aitoolkitmodel.sh`，使其与 ai-toolkit 支持的模型保持同步。
 
@@ -27,6 +29,40 @@ description: 更新模型符号链接脚本和模型清单。当 ai-toolkit 新�
 
 在 `update_accuracy_recovery_adapters()` 的 `adapters` 数组中添加 `"哈希路径|文件名"` 条目。
 哈希路径可通过 `find /.autodl/ -name "*.safetensors" | head` 搜索。
+
+## 部署与验证
+
+仓库内脚本是源文件：
+
+```bash
+skills/scripts-update/scripts/update-aitoolkitmodel.sh
+```
+
+镜像运行时实际执行：
+
+```bash
+/root/update-aitoolkitmodel.sh
+```
+
+修改仓库脚本后，需要同步到镜像路径并验证：
+
+```bash
+cp skills/scripts-update/scripts/update-aitoolkitmodel.sh /root/update-aitoolkitmodel.sh
+chmod +x /root/update-aitoolkitmodel.sh
+bash /root/update-aitoolkitmodel.sh
+```
+
+验证标准：
+
+```bash
+# 标准模型应链接到 /root/ai-toolkit/<hf_path>
+ls -la /root/ai-toolkit/Qwen/Qwen-Image
+
+# 精度恢复适配器应在 ai-toolkit 仓库内可见
+ls -la /root/ai-toolkit/ostris/accuracy_recovery_adapters
+```
+
+如果链接目标指向 `/root/autodl-tmp`，说明脚本或旧文档已经过期，应改为 `/root/ai-toolkit`。
 
 ## 模型清单
 

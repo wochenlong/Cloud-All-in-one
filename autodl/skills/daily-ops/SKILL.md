@@ -1,11 +1,15 @@
 ---
 name: daily-ops
-description: AutoDL 日常操作速查。启动 UI、网络加速、模型检查、常见问题。
+description: AutoDL 日常操作速查。用于启动 UI、网络加速、存储检查和常见问题；具体命令需结合 image-profiles。
 ---
 
 # 日常操作
 
+本 skill 是速查层。执行前先读取 [autodl-common](../autodl-common/SKILL.md) 和对应 `image-profiles/<profile>.toml`。
+
 ## 启动 UI
+
+优先使用当前 profile 的 `runtime.ui_command`。AI-Toolkit 镜像默认：
 
 ```bash
 bash /root/start.sh
@@ -29,6 +33,8 @@ unset http_proxy https_proxy no_proxy HTTP_PROXY HTTPS_PROXY NO_PROXY  # 关闭
 
 ## 检查模型可用性
 
+共享模型检查是 AutoDL 通用能力，但具体模型列表由当前镜像决定。AI-Toolkit 示例：
+
 ```bash
 # 某个模型是否在共享目录
 ls /.autodl-model/data/black-forest-labs/FLUX.2-dev
@@ -44,7 +50,7 @@ done
 | 问题 | 解决 |
 |---|---|
 | UI 启动后访问不了 | 确认端口 6006: `echo $PORT`，通过 AutoDL「自定义服务」访问 |
-| 模型加载失败 | 检查符号链接: `ls -la /root/autodl-tmp/模型路径`，运行 `bash /root/update-aitoolkitmodel.sh` |
+| AI-Toolkit 模型加载失败 | 检查符号链接: `ls -la /root/ai-toolkit/<org>/<model>`，运行 `bash /root/update-aitoolkitmodel.sh` |
 | pip/git 超时 | 忘了开加速: `source /etc/network_turbo` |
 | 系统盘满 | `du -sh /root/*/ \| sort -rh \| head`，清理 `.cache/` |
 | 训练中断 | 确认是否在 tmux/screen 中运行 |

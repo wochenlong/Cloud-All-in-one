@@ -1,0 +1,39 @@
+# AutoDL AI-Toolkit 镜像 profile
+# 这里描述镜像自身，不描述通用 AutoDL 平台能力。
+
+id = "ai-toolkit"
+display_name = "AI-Toolkit AutoDL 镜像"
+status = "active"
+
+[paths]
+project_dir = "/root/ai-toolkit"
+dataset_root = "/root/autodl-tmp/datasets"
+job_config_dir = "/root/autodl-tmp/jobs"
+output_dir = "/root/autodl-tmp/output"
+log_dir = "/root/autodl-tmp/logs"
+shared_model_dir = "/.autodl-model/data"
+
+[runtime]
+conda_env = "ai-toolkit"
+setup_command = "source /root/miniconda3/etc/profile.d/conda.sh && conda activate ai-toolkit"
+ui_command = "bash /root/start.sh"
+ui_port = 6006
+tmux_ui_session = "aiui"
+
+[maintenance]
+update_skill = "image-maintenance"
+model_link_skill = "scripts-update"
+model_link_script = "/root/update-aitoolkitmodel.sh"
+
+[trainer]
+type = "external"
+name = "aitoolkit-trainer"
+repo = "https://github.com/wochenlong/aitoolkit-trainer"
+install_dir = "/root/aitoolkit-trainer"
+profile = "autodl"
+supported_tasks = ["image", "image_edit"]
+
+[test_datasets]
+image_generation = "/root/ai-toolkit/datasets/flux"
+image_edit_target = "/root/ai-toolkit/datasets/edit"
+image_edit_control = "/root/ai-toolkit/datasets/images"

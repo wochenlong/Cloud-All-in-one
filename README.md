@@ -28,12 +28,15 @@ Cloud-All-in-one/
 │   │   └── env.sh                   # AutoDL 环境变量
 │   ├── docs/
 │   │   └── autodl-model-request.md  # 请求 AutoDL 补充共享模型的清单
+│   ├── image-profiles/              # 不同 AutoDL 镜像的路径、环境和 trainer 配置
+│   │   ├── ai-toolkit.toml
+│   │   └── lora-scripts.toml
 │   └── skills/
-│       ├── ai-toolkit-training/      # 生成配置、启动训练、监控输出
-│       ├── cloud-training/           # API 创建实例、上传训练集、下载结果
+│       ├── autodl-common/            # 所有 AutoDL 镜像通用规则
+│       ├── cloud-training/           # API 创建实例、上传训练集、调用外部训练工具、下载结果
 │       ├── daily-ops/               # 日常启动、网络加速、模型检查
-│       ├── image-maintenance/       # 镜像维护、更新代码、保存前检查
-│       └── scripts-update/          # 模型链接脚本维护
+│       ├── image-maintenance/       # AI-Toolkit 镜像维护、更新代码、保存前检查
+│       └── scripts-update/          # AI-Toolkit 模型链接脚本维护
 └── README.md
 ```
 
@@ -47,13 +50,38 @@ autodl/AGENTS.md
 
 然后按任务选择对应 skill：
 
-| Skill | 用途 |
+| Skill / 模块 | 用途 |
 |---|---|
+| `autodl-common` | 所有 AutoDL 镜像通用规则：端口、数据盘、网络加速、tmux、保存前检查 |
 | `daily-ops` | 启动 UI、网络加速、共享模型检查、常见问题 |
-| `image-maintenance` | 更新 ai-toolkit、保留本地修改、保存镜像前检查 |
-| `scripts-update` | 更新模型符号链接脚本、同步新共享模型 |
-| `cloud-training` | 使用 AutoDL API 创建实例，配合 SSH/SCP/rsync 上传训练集并下载结果 |
-| `ai-toolkit-training` | 数据集已上传后，优先支持 Qwen 图像/图像编辑训练配置、tmux 启动和输出定位；默认值和内置测试集见 `training.defaults.toml` |
+| `image-profiles` | 描述不同镜像的项目路径、环境、启动命令和 trainer |
+| `cloud-training` | 使用 AutoDL API 创建实例，配合 SSH/SCP/rsync 上传训练集并按 profile 调用 trainer |
+| `image-maintenance` | AI-Toolkit 镜像专属：更新 ai-toolkit、保留本地修改、保存镜像前检查 |
+| `scripts-update` | AI-Toolkit 镜像专属：更新模型符号链接脚本、同步新共享模型 |
+| 外部 `aitoolkit-trainer` | 验证数据集、生成 Qwen 图像/图像编辑训练配置、tmux 启动和输出定位 |
+
+### 多镜像 Profile
+
+AutoDL 通用能力和具体训练镜像解耦。镜像差异写在：
+
+```bash
+autodl/image-profiles/
+```
+
+当前包含：
+
+| Profile | 状态 | 说明 |
+|---|---|---|
+| `ai-toolkit.toml` | active | 当前 AI-Toolkit 训练镜像，调用外部 `aitoolkit-trainer` |
+| `lora-scripts.toml` | draft | Akegarasu/lora-scripts 待接入镜像，路径和命令待实际镜像确认 |
+
+### AI-Toolkit 训练工具
+
+AI-Toolkit 训练逻辑已独立到：
+
+https://github.com/wochenlong/aitoolkit-trainer
+
+`autodl/` 只负责 AutoDL 平台、镜像维护、模型链接和云端编排；具体训练由远端克隆的 `aitoolkit-trainer` 执行。
 
 ### 模型链接脚本
 
@@ -96,4 +124,9 @@ bash autodl/skills/scripts-update/scripts/update-aitoolkitmodel.sh
 
 ### 1. [AutoDL](https://www.autodl.com/home)
 
-https://www.codewithgpu.com/i/t4wefan/kohya_ss/kohya-ss-SDXL
+当前支持的 AutoDL 训练镜像：
+
+| 镜像 | 用途 | 地址 |
+|---|---|---|
+| AI-Toolkit | Qwen Image/Edit、FLUX、Wan、LTX 等 AI-Toolkit 训练流程 | https://www.autodl.art/app/market/13 |
+| 秋叶训练包（Akegarasu/lora-scripts） | lora-scripts 训练镜像，当前已建立 profile 草案，待实际镜像校准自动训练流程 | https://www.autodl.art/app/market/11? |

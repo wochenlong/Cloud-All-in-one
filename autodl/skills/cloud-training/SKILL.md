@@ -7,7 +7,7 @@ description: 使用 AutoDL 官方 API 编排云端训练。用于从本地数据
 
 ## 目标
 
-让用户只准备本地训练集、训练配置和 AutoDL 开发者 Token，就能由 agent 自动完成：
+让用户只准备本地训练集、镜像 profile 和 AutoDL 开发者 Token，就能由 agent 自动完成：
 
 1. 创建 AutoDL 应用实例
 2. 等待实例进入 `running`
@@ -16,6 +16,12 @@ description: 使用 AutoDL 官方 API 编排云端训练。用于从本地数据
 5. 启动训练
 6. 下载 LoRA/模型输出
 7. 关机或释放实例
+
+本 skill 是 AutoDL 云端编排层，不绑定某一个训练镜像。具体镜像差异读取：
+
+```bash
+autodl/image-profiles/<profile>.toml
+```
 
 ## AutoDL API 能力边界
 
@@ -50,6 +56,41 @@ Token 获取位置：AutoDL 控制台 → 账号 → 设置 → 开发者 Token�
 
 如果未来 AutoDL 提供文件传输 API，优先替换 SSH/SCP 层，实例生命周期逻辑保持不变。
 
+## 与 trainer 的交接
+
+`cloud-training` 只负责编排云实例和文件传输；训练本身交给 profile 指定的 trainer。
+
+交接契约：
+
+| 阶段 | cloud-training 负责 | trainer 负责 |
+|---|---|---|
+| 准备实例 | 创建/开机/等待 `running` | 不参与 |
+| 准备数据 | 上传数据集到远端数据盘 | 验证数据集结构 |
+| 准备配置 | 传入 job 名、数据集路径、训练类型 | 生成 AI-Toolkit YAML |
+| 启动任务 | 通过 SSH 执行远端脚本 | 用 tmux 启动训练 |
+| 结果处理 | 下载输出、关机/释放实例 | 输出日志路径、tmux 会话名、输出目录 |
+
+### AI-Toolkit profile
+
+`image-profiles/ai-toolkit.toml` 指向独立仓库 [aitoolkit-trainer](https://github.com/wochenlong/aitoolkit-trainer)。
+
+如果训练工具仓库未部署到远端，应先执行：
+
+```bash
+git clone https://github.com/wochenlong/aitoolkit-trainer.git /root/aitoolkit-trainer
+```
+
+### 其他 profile
+
+如果 profile 的 `[trainer] type = "manual"`，说明还没有自动训练工具。此时 cloud-training 只应完成：
+
+1. 创建实例
+2. 上传数据
+3. 打印 SSH/Jupyter/6006 信息
+4. 提醒用户按该镜像官方流程手动训练
+
+不要强行套用 `aitoolkit-trainer`。
+
 ## 安全规则
 
 - **不要**把 `AUTODL_TOKEN` 写入镜像、仓库、脚本默认值或日志
@@ -68,8 +109,8 @@ export AUTODL_TOKEN="..."
 python train_on_autodl.py \
   --application-uuid "J1c7lsvbq5" \
   --gpu-spec "5090-p" \
+  --profile ai-toolkit \
   --dataset ./dataset \
-  --config ./train.yaml \
   --output ./outputs \
   --shutdown
 ```
@@ -122,21 +163,43 @@ scp -P "${SSH_PORT}" ./train.yaml root@${PROXY_HOST}:/root/autodl-tmp/jobs/train
 
 ### 5. 启动训练
 
-远端执行：
+先读取 `image-profiles/<profile>.toml` 的 `[trainer]`。
+
+如果是 `ai-toolkit` profile，远端优先调用 `aitoolkit-trainer`，不直接手写 `python run.py`：
 
 ```bash
-source /root/miniconda3/etc/profile.d/conda.sh
-conda activate ai-toolkit
-bash /root/update-aitoolkitmodel.sh
-cd /root/ai-toolkit
-python run.py /root/autodl-tmp/jobs/train.yaml
+cd /root/aitoolkit-trainer
+
+python scripts/validate_qwen_dataset.py \
+  --profile autodl \
+  --mode image \
+  --dataset /root/autodl-tmp/datasets/job
+
+python scripts/generate_qwen_config.py \
+  --profile autodl \
+  --mode image \
+  --job-name job \
+  --dataset /root/autodl-tmp/datasets/job
+
+bash scripts/start_ai_toolkit_training.sh \
+  --profile autodl \
+  --job-name job \
+  --config-yaml /root/autodl-tmp/jobs/job.yaml
 ```
 
-长期任务必须放在 `tmux` 或 `screen` 中：
+图像编辑任务改用：
 
 ```bash
-tmux new-session -d -s train "cd /root/ai-toolkit && python run.py /root/autodl-tmp/jobs/train.yaml"
+python scripts/validate_qwen_dataset.py \
+  --profile autodl \
+  --mode edit \
+  --target /root/autodl-tmp/datasets/job/target \
+  --control /root/autodl-tmp/datasets/job/control
 ```
+
+训练启动脚本会按 `training.defaults.toml` 使用 tmux，并返回会话名和日志路径。
+
+如果是 `lora-scripts` 等尚未接入 trainer 的 profile，先不要自动启动训练，只打印远端连接信息和已上传路径。
 
 ### 6. 下载结果
 

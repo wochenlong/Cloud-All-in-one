@@ -1,9 +1,11 @@
 ---
 name: image-maintenance
-description: AutoDL 镜像维护。更新 ai-toolkit 代码（保留本地修改）、保存镜像前检查、环境修复。
+description: AI-Toolkit AutoDL 镜像维护。更新 ai-toolkit 代码（保留本地修改）、保存镜像前检查、环境修复。
 ---
 
-# 镜像维护
+# AI-Toolkit 镜像维护
+
+本 skill 只适用于 `image-profiles/ai-toolkit.toml`。其他 AutoDL 镜像先使用 `autodl-common`，不要套用这里的 `/root/ai-toolkit` 更新流程。
 
 ## 本地修改清单（更新代码时必须保留）
 
@@ -42,4 +44,4 @@ git stash pop
 | Python 包 | `/root/ai-toolkit/requirements.txt` |
 | 端口 | 6006（`~/.bashrc` 中 `export PORT=6006`） |
 | 启动脚本 | `/root/start.sh` |
-| 模型链接脚本 | `/root/update-aitoolkitmodel.sh`（符号链接） |
+| 模型链接脚本 | `/root/update-aitoolkitmodel.sh`（镜像内实际部署脚本） |
