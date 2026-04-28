@@ -16,6 +16,10 @@
 
 ![数据集](https://codewithgpu-image-1310972338.cos.ap-beijing.myqcloud.com/40972-743417363-QKeiWXDihB7utiXRHRW7.png)
 
+## lora-scripts-next 5090 部署
+
+RTX 5090 / 50 系显卡建议使用 `PyTorch 2.8.0 + CUDA 12.8` 镜像，并在实例内创建 Python 3.10 环境运行 `lora-scripts-next`。详见 [`autodl/lora-scripts-next-5090-deploy.md`](autodl/lora-scripts-next-5090-deploy.md)。
+
 ## 🧩 支持模型
 
 > 以下显存需求为 **LoRA 训练参考值**，实际占用会受分辨率、batch size、优化策略影响。
