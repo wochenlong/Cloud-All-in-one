@@ -28,9 +28,17 @@ nvidia-smi
 本项目 README 要求 Python 3.10，且依赖里包含较旧的训练栈组件，例如 `gradio==3.44.2`、`pytorch-lightning==1.9.0`。因此不要使用镜像自带的 Python 3.12。
 
 ```bash
-conda create -n lora-next python=3.10 -y
+source /root/miniconda3/etc/profile.d/conda.sh
+
+conda create -n lora-next python=3.10 -y \
+  -c https://mirrors.ustc.edu.cn/anaconda/pkgs/main \
+  -c https://mirrors.ustc.edu.cn/anaconda/pkgs/r \
+  --override-channels \
+  --solver=classic
+
 conda activate lora-next
 
+which python
 python --version
 pip install -U pip setuptools wheel
 ```
@@ -38,8 +46,11 @@ pip install -U pip setuptools wheel
 期望：
 
 ```text
+/root/miniconda3/envs/lora-next/bin/python
 Python 3.10.x
 ```
+
+说明：AutoDL 镜像内置的 conda 源可能包含失效的 `pkgs/free` 通道，导致 `conda create` 报 `repository does not start with an object`。上面的命令使用中科大源并通过 `--override-channels` 绕开坏源，已在 AutoDL 实例中验证可创建 `Python 3.10.20` 环境。
 
 ## 4. 安装 PyTorch cu128
 
@@ -69,7 +80,7 @@ NVIDIA GeForce RTX 5090
 如果实例里还没有代码：
 
 ```bash
-cd /root/autodl-tmp
+cd /root
 git clone --recurse-submodules https://github.com/wochenlong/lora-scripts-next.git
 cd lora-scripts-next
 ```
@@ -77,7 +88,7 @@ cd lora-scripts-next
 如果已经上传或同步了项目代码，则进入项目根目录即可：
 
 ```bash
-cd /root/autodl-tmp/lora-scripts-next
+cd /root/lora-scripts-next
 ```
 
 确认当前目录中有：
@@ -115,7 +126,7 @@ AutoDL 需要监听外部访问地址，因此启动时使用 `--listen`。
 
 ```bash
 conda activate lora-next
-cd /root/autodl-tmp/lora-scripts-next
+cd /root/lora-scripts-next
 bash run_gui.sh --listen
 ```
 
@@ -134,13 +145,18 @@ WebUI 默认端口：
 
 ## 8. 推荐目录规划
 
-AutoDL 常见持久化目录是 `/root/autodl-tmp`，建议把项目、模型、数据集和输出都放在这里，避免实例重启或释放后丢失重要文件。
+如果目标是制作 AutoDL 自定义镜像，项目代码和 Python 环境要放在系统盘 `/root` 下；数据盘 `/root/autodl-tmp` 在打包镜像时不会保留。
+
+建议把项目和环境放在系统盘，把模型、数据集和输出按需要放到数据盘或共享存储。
 
 建议结构：
 
 ```text
-/root/autodl-tmp/
+/root/
+  miniconda3/envs/lora-next/
   lora-scripts-next/
+
+/root/autodl-tmp/
   models/
   datasets/
   outputs/
@@ -155,7 +171,14 @@ AutoDL 常见持久化目录是 `/root/autodl-tmp`，建议把项目、模型、
 这是基础镜像自带 Python，不要直接使用。重新执行：
 
 ```bash
-conda create -n lora-next python=3.10 -y
+source /root/miniconda3/etc/profile.d/conda.sh
+
+conda create -n lora-next python=3.10 -y \
+  -c https://mirrors.ustc.edu.cn/anaconda/pkgs/main \
+  -c https://mirrors.ustc.edu.cn/anaconda/pkgs/r \
+  --override-channels \
+  --solver=classic
+
 conda activate lora-next
 ```
 
@@ -177,7 +200,29 @@ pip uninstall -y torch torchvision torchaudio
 pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
 ```
 
-### 9.3 `xformers` 报错
+### 9.3 `conda create` 报清华源 / `pkgs/free` 错误
+
+如果出现类似 `repository does not start with an object`，通常是当前 `.condarc` 中的旧 `pkgs/free` 源异常。直接用中科大源覆盖通道创建环境：
+
+```bash
+source /root/miniconda3/etc/profile.d/conda.sh
+
+conda create -n lora-next python=3.10 -y \
+  -c https://mirrors.ustc.edu.cn/anaconda/pkgs/main \
+  -c https://mirrors.ustc.edu.cn/anaconda/pkgs/r \
+  --override-channels \
+  --solver=classic
+```
+
+创建成功后确认：
+
+```bash
+conda activate lora-next
+which python
+python --version
+```
+
+### 9.4 `xformers` 报错
 
 5090 上不要为了 `xformers` 降级 CUDA 或 PyTorch。优先先确认不使用 `xformers` 是否能训练；PyTorch 2.x 自带 SDPA，很多训练场景可以不用 `xformers`。
 
@@ -193,7 +238,7 @@ pip install -U xformers
 python -c "import xformers; print(xformers.__version__)"
 ```
 
-### 9.4 `bitsandbytes` 报错
+### 9.5 `bitsandbytes` 报错
 
 项目当前依赖里有 `bitsandbytes==0.46.0`。如果在 5090 上加载失败，可以尝试升级：
 
@@ -207,7 +252,7 @@ pip install -U bitsandbytes
 python -c "import bitsandbytes as bnb; print(bnb.__version__)"
 ```
 
-### 9.5 OpenCV / 图形库缺失
+### 9.6 OpenCV / 图形库缺失
 
 如果出现 `libGL.so.1`、`libsm6`、`libxext6` 相关错误：
 
@@ -222,9 +267,9 @@ Agent 在 AutoDL 上部署时按这个顺序执行：
 
 1. 确认 AutoDL 镜像是 `PyTorch 2.8.0 + CUDA 12.8`。
 2. 用 `nvidia-smi` 确认 RTX 5090 可见。
-3. 创建并激活 `conda` 环境：`lora-next / Python 3.10`。
+3. 用中科大源创建并激活 `conda` 环境：`lora-next / Python 3.10`。
 4. 安装 `torch==2.8.0` 的 `cu128` wheel。
-5. 克隆或进入 `lora-scripts-next` 项目目录。
+5. 克隆或进入系统盘 `/root/lora-scripts-next` 项目目录。
 6. 执行 `pip install -r requirements.txt`。
 7. 用 Python 命令验证 `torch.cuda.is_available()`、CUDA 版本和 GPU 名称。
 8. 启动 `bash run_gui.sh --listen` 或 `python gui.py --listen --host 0.0.0.0 --port 28000`。
@@ -237,13 +282,20 @@ Agent 在 AutoDL 上部署时按这个顺序执行：
 ```bash
 nvidia-smi
 
-conda create -n lora-next python=3.10 -y
+source /root/miniconda3/etc/profile.d/conda.sh
+
+conda create -n lora-next python=3.10 -y \
+  -c https://mirrors.ustc.edu.cn/anaconda/pkgs/main \
+  -c https://mirrors.ustc.edu.cn/anaconda/pkgs/r \
+  --override-channels \
+  --solver=classic
+
 conda activate lora-next
 
 pip install -U pip setuptools wheel
 pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
 
-cd /root/autodl-tmp
+cd /root
 git clone --recurse-submodules https://github.com/wochenlong/lora-scripts-next.git
 cd lora-scripts-next
 
