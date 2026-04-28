@@ -237,6 +237,33 @@ autodl/image-profiles/
 
 ## AI-Toolkit 镜像专属内容
 
+### 支持的训练模型（AutoDL 共享盘已有）
+
+以下显存需求为 LoRA 训练参考值，实际占用会受分辨率、batch size、优化策略影响。
+
+| 模型类型 | 模型名称 | LoRA 训练显存建议 |
+|---------|----------|------------------|
+| 🖼️ 图像生成 | **Z-Image** | 16 GB |
+| 🖼️ 图像生成 | Z-Image-De-Turbo | 16 GB |
+| 🖼️ 图像生成 | FLUX1 | 16–24 GB |
+| 🖼️ 图像生成 | Qwen-Image | 24 GB |
+| 🖼️ 图像生成 | SDXL | 8 GB |
+| 🖼️ 图像生成 | Qwen-Image-2512 | 24 GB |
+| 🖼️ 图像生成 | FLUX.2-klein-4B | 16 GB |
+| 🖼️ 图像生成 | FLUX.2-klein-9B | 28 GB（无优化） |
+| 🖼️ 图像生成 | ERNIE-Image | 16 GB |
+| 🎨 图像编辑 | FLUX.1-Kontext-dev | 16–24 GB |
+| 🎨 图像编辑 | FLUX2 | 50 GB（无优化） |
+| 🎨 图像编辑 | Qwen-Image-Edit2509 | 24 GB |
+| 🎨 图像编辑 | Qwen-Image-Edit2511 | 24 GB |
+| 🎬 视频生成 | LTX-2 | 45 GB（无优化） |
+| 🎬 视频生成 | LTX-2.3 | 45 GB（无优化） |
+| 🎬 视频生成 | wan2.2 | 24–48 GB |
+
+> 共享盘暂无的模型（Zeta-Chroma、Nucleus-Image、HiDream、OmniGen2）已提交补充申请，详见 `autodl/docs/autodl-model-request.md`。
+
+### 模型链接脚本
+
 AI-Toolkit 镜像使用 AutoDL 共享模型目录，模型链接脚本位于：
 
 ```bash
@@ -250,8 +277,6 @@ autodl/skills/scripts-update/scripts/update-aitoolkitmodel.sh
 ```bash
 bash autodl/skills/scripts-update/scripts/update-aitoolkitmodel.sh
 ```
-
-当前脚本覆盖的主要共享模型包括 FLUX.1/2、Qwen Image/Edit、ERNIE-Image、Z-Image、Zeta-Chroma、LTX、Wan2.2、Mistral 和相关精度恢复适配器。
 
 ## 相关项目
 

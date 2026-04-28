@@ -21,11 +21,26 @@ description: AI-Toolkit AutoDL 镜像维护。更新 ai-toolkit 代码（保留�
 ```bash
 source /etc/network_turbo
 cd /root/ai-toolkit
+
+# 1. 代码更新（保留本地修改）
 git stash push -m "local-mods"
 git pull origin main
 git stash pop
 # 有冲突则手动解决，优先保留本地逻辑
+
+# 2. Python 依赖更新（必须在 conda 环境中执行）
+conda activate ai-toolkit
+pip install -r requirements.txt
+
+# 3. UI 依赖 + 数据库 + 构建 + 启动
+cd ui
+npm install --prefer-offline --no-audit
+npm run update_db          # Prisma schema 同步，上游变更时必需
+npm run build
+npm run start
 ```
+
+> **一键方式**: 也可以直接运行 `/root/update_restart.sh`，它会按上述顺序自动完成全部步骤。
 
 ## 保存镜像前检查
 
@@ -39,9 +54,10 @@ git stash pop
 
 | 项目 | 值 |
 |---|---|
-| conda 环境 | `ai-toolkit` |
+| conda 环境 | `ai-toolkit`（Python 3.10） |
+| venv 符号链接 | `/root/ai-toolkit/venv` → conda 环境，Worker 通过此链接找到正确的 Python |
 | Node.js | `/root/.nvm/versions/node/v18.20.8/bin` |
-| Python 包 | `/root/ai-toolkit/requirements.txt` |
+| Python 包 | `/root/ai-toolkit/requirements.txt`（git pull 后必须 `pip install -r`） |
 | 端口 | 6006（`~/.bashrc` 中 `export PORT=6006`） |
-| 启动脚本 | `/root/start.sh` |
+| 更新脚本 | `/root/update_restart.sh`（自动完成 git pull + pip + npm + build + restart） |
 | 模型链接脚本 | `/root/update-aitoolkitmodel.sh`（镜像内实际部署脚本） |
