@@ -106,6 +106,8 @@ df -h /
 
 - 平台通用问题先用本 skill。
 - 创建/释放实例、上传下载文件用 `cloud-training`。
-- AI-Toolkit 镜像专属模型链接用 `scripts-update`。
+- AI-Toolkit 镜像代码更新与启动维护用 `ai-toolkit-maintenance`。
+- AI-Toolkit 镜像专属模型链接用 `ai-toolkit-scripts-update`。
 - AI-Toolkit 训练用外部 `aitoolkit-trainer`。
-- 其他训练镜像先补 `image-profiles/<name>.toml`，再决定是否需要独立 trainer。
+- lora-scripts-next 镜像维护用 `lora-scripts-next-maintenance`。
+- 其他训练镜像先补 `image-profiles/<name>.toml`，再决定是否需要独立 skill / trainer。

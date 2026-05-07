@@ -21,8 +21,8 @@ ui_port = 6006
 tmux_ui_session = "aiui"
 
 [maintenance]
-update_skill = "image-maintenance"
-model_link_skill = "scripts-update"
+update_skill = "ai-toolkit-maintenance"
+model_link_skill = "ai-toolkit-scripts-update"
 model_link_script = "/root/update-aitoolkitmodel.sh"
 
 [trainer]

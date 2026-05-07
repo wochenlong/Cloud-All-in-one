@@ -1,0 +1,91 @@
+# AutoDL lora-scripts-next 镜像 profile
+# 描述 wochenlong/lora-scripts-next 在 AutoDL 上的实际镜像，不描述通用 AutoDL 平台能力。
+# 与 lora-scripts.toml 区别：lora-scripts 指向 Akegarasu 上游、当前为草案；本 profile 指向
+# wochenlong fork（带 Anima/Flux/SDXL 默认值补丁、6008 监控页、本地启动脚本），状态 active。
+
+id = "lora-scripts-next"
+display_name = "lora-scripts-next AutoDL 镜像 (wochenlong fork)"
+status = "active"
+upstream = "https://github.com/wochenlong/lora-scripts-next"
+
+[paths]
+project_dir = "/root/lora-scripts-next"
+dataset_root = "/root/autodl-tmp/datasets"
+job_config_dir = "/root/autodl-tmp/jobs"
+output_dir = "/root/lora-scripts-next/output"
+log_dir = "/root/lora-scripts-next/logs"
+shared_model_dir = "/.autodl-model/data"
+local_models_dir = "/root/lora-scripts-next/sd-models"
+internal_dir = "/root/_lora_internal"
+
+[runtime]
+conda_env = "lora-next"
+python_version = "3.10"
+setup_command = "source /root/miniconda3/etc/profile.d/conda.sh && conda activate lora-next"
+ui_command = "/root/lora-scripts-next/start_lora_next.sh"
+ui_port = 6006
+monitor_port = 6008
+tageditor_port = 28001
+# Anima/Flux/SDXL 默认值补丁脚本，必须先于 GUI 启动一次
+defaults_patch = "/root/lora-scripts-next/apply_lora_next_anima_defaults.py"
+# 不要直接执行 `python gui.py`：会跳过默认值补丁和端口清理
+# 重启使用：
+restart_command = "/root/lora-scripts-next/restart_lora_gui.sh"
+# 拉上游 + 重启：
+update_command = "/root/lora-scripts-next/update_lora_gui.sh"
+# 启动脚本不使用 tmux，直接 nohup 后台 + pid 文件
+tmux_ui_session = ""
+pid_file = "/root/lora_gui.pid"
+log_files = [
+  "/root/lora_gui_autostart.log",
+  "/root/lora_gui_restart.log",
+  "/root/lora_monitor.log",
+]
+
+[autostart]
+# 镜像开机自启脚本，通过 AutoDL 「开机自启」配置触发
+script = "/root/autostart_lora_gui.sh"
+
+[shared_models]
+# 镜像启动时由 apply_lora_next_anima_defaults.py 软链接到 paths.local_models_dir
+anima_dit = "/.autodl/circlestone-labs/Anima/split_files/diffusion_models/anima-preview3-base.safetensors"
+anima_qwen3_te = "/.autodl/circlestone-labs/Anima/split_files/text_encoders/qwen_3_06b_base.safetensors"
+anima_vae = "/.autodl/circlestone-labs/Anima/split_files/vae/qwen_image_vae.safetensors"
+flux_dit_fp8 = "/.autodl/23/73/8c/23738c26b548113ea2d392abd91d3fd0"        # 实名 flux1-dev-fp8.safetensors
+flux_ae = "/.autodl/black-forest-labs/FLUX.1-dev/ae.safetensors"
+flux_t5xxl_fp8 = "/.autodl/a3/e7/20/a3e720ed91f439ecc3dfd15e56b137bc"      # 实名 t5xxl_fp8_e4m3fn.safetensors
+flux_clip_l = "/.autodl/comfyanonymous/flux_text_encoders/clip_l.safetensors"
+sdxl_eps_chenkin = "/.autodl/5c/18/f8/5c18f83c804c06e10e24c191b422f02d"   # ChenkinNoob-XL-V0.5.safetensors
+sdxl_eps_illustrious = "/.autodl/a8/94/d5/a894d5ef78c0b284d0ec1e22c4bb56dc"
+sdxl_vpred_noobai = "/.autodl/a0/81/5e/a0815ef81f4a91a830dcc35dc8e06ac1"
+
+[schemas]
+# UI 默认值由这些 TS schema 注入；apply_lora_next_anima_defaults.py 会覆盖路径字段
+anima = "/root/lora-scripts-next/mikazuki/schema/sd3-lora.ts"
+flux = "/root/lora-scripts-next/mikazuki/schema/flux-lora.ts"
+sdxl_master = "/root/lora-scripts-next/mikazuki/schema/lora-master.ts"
+
+[maintenance]
+update_skill = "lora-scripts-next-maintenance"
+model_link_skill = "lora-scripts-next-maintenance"
+model_link_script = "/root/lora-scripts-next/apply_lora_next_anima_defaults.py"
+
+[trainer]
+# 当前镜像通过自带 GUI（6006）训练，没有独立 trainer 仓库做远程编排
+type = "manual"
+name = ""
+repo = ""
+install_dir = ""
+profile = "autodl"
+supported_tasks = ["image", "anima_lora", "flux_lora", "sdxl_lora", "sdxl_rectified_flow"]
+
+[test_datasets]
+image_generation = ""
+image_edit_target = ""
+image_edit_control = ""
+
+[notes]
+gpu_target = "RTX 5090 / 50 系 (Blackwell)"
+torch = "2.8.0+cu128"
+cuda = "12.8"
+deploy_doc = "autodl/docs/lora-scripts-next-5090-deploy.md"

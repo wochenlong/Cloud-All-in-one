@@ -1,6 +1,7 @@
 #!/bin/bash
-# AutoDL 镜像统一环境配置
-# 用法: source config/env.sh
+# AI-Toolkit AutoDL 镜像专属环境配置
+# 仅用于 image-profiles/ai-toolkit.toml；其他镜像不要 source 这份文件。
+# 用法: source autodl/config/ai-toolkit.env.sh
 
 # GPU 设置
 export CUDA_VISIBLE_DEVICES=0

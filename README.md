@@ -18,7 +18,7 @@
 
 ## lora-scripts-next 5090 部署
 
-RTX 5090 / 50 系显卡建议使用 `PyTorch 2.8.0 + CUDA 12.8` 镜像，并在实例内创建 Python 3.10 环境运行 `lora-scripts-next`。详见 [`autodl/lora-scripts-next-5090-deploy.md`](autodl/lora-scripts-next-5090-deploy.md)。
+RTX 5090 / 50 系显卡建议使用 `PyTorch 2.8.0 + CUDA 12.8` 镜像，并在实例内创建 Python 3.10 环境运行 `lora-scripts-next`。详见 [`autodl/docs/lora-scripts-next-5090-deploy.md`](autodl/docs/lora-scripts-next-5090-deploy.md)。
 
 ## 🧩 支持模型
 
