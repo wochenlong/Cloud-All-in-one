@@ -10,6 +10,7 @@
 |---|---|---|---|
 | **AI-Toolkit** | active | [ostris/ai-toolkit](https://github.com/ostris/ai-toolkit) 一键训练镜像，覆盖 Z-Image / FLUX / Qwen / LTX / Wan2.2 等主流图像、图像编辑、视频生成模型 LoRA 训练 | [`autodl/image-profiles/ai-toolkit.md`](autodl/image-profiles/ai-toolkit.md) |
 | **lora-scripts-next** | active | [wochenlong/lora-scripts-next](https://github.com/wochenlong/lora-scripts-next) 训练镜像，RTX 5090 / Blackwell 适配，含 Anima/Flux/SDXL 默认值补丁与 6008 训练监控页 | [`autodl/image-profiles/lora-scripts-next.md`](autodl/image-profiles/lora-scripts-next.md) |
+| **musubi-tuner** | draft | [kohya-ss/musubi-tuner](https://github.com/kohya-ss/musubi-tuner) 纯命令行训练脚本集，5090 / Python 3.12 / cu128，覆盖 FLUX.1-Kontext / FLUX.2 / Qwen-Image / Z-Image 等图像架构 LoRA | [`autodl/image-profiles/musubi-tuner.md`](autodl/image-profiles/musubi-tuner.md) |
 | lora-scripts | draft | [Akegarasu/lora-scripts](https://github.com/Akegarasu/lora-scripts) 上游待接入 | [`autodl/image-profiles/lora-scripts.toml`](autodl/image-profiles/lora-scripts.toml) |
 
 ## 设计层级
@@ -33,6 +34,7 @@ Cloud-All-in-one/
     ├── image-profiles/                 ← 镜像声明：路径、端口、conda、共享模型映射
     │   ├── ai-toolkit.toml + .md
     │   ├── lora-scripts-next.toml + .md
+    │   ├── musubi-tuner.toml + .md     (draft)
     │   └── lora-scripts.toml           (draft)
     ├── skills/                         ← 可复用的操作流程
     │   ├── autodl-common/              ← 通用 AutoDL 操作
@@ -46,7 +48,8 @@ Cloud-All-in-one/
     └── docs/
         ├── maintenance-guide.md                ← 维护本仓库（新增 skill / profile / trainer）
         ├── ai-toolkit-model-request.md         ← 向 AutoDL 申请补充 AI-Toolkit 共享模型
-        └── lora-scripts-next-5090-deploy.md    ← lora-scripts-next 在 5090 / 50 系新机的从零部署
+        ├── lora-scripts-next-5090-deploy.md    ← lora-scripts-next 在 5090 / 50 系新机的从零部署
+        └── musubi-tuner-deploy.md              ← musubi-tuner 在 AutoDL 的从零部署（5090 + Python 3.12 + cu128）
 ```
 
 > 镜像专属 skill 命名一律带镜像 ID 前缀（`ai-toolkit-*`、`lora-scripts-next-*`），通用 skill 不带前缀，避免跨镜像误用。
@@ -66,6 +69,14 @@ Cloud-All-in-one/
 5090 新机从零部署 → [`autodl/docs/lora-scripts-next-5090-deploy.md`](autodl/docs/lora-scripts-next-5090-deploy.md)。
 
 镜像维护 → [`autodl/skills/lora-scripts-next-maintenance/SKILL.md`](autodl/skills/lora-scripts-next-maintenance/SKILL.md)。
+
+### 我是 musubi-tuner 镜像用户
+
+只想训练 → 看 [`autodl/image-profiles/musubi-tuner.md`](autodl/image-profiles/musubi-tuner.md)（纯命令行，无 GUI；图像架构 LoRA 优先）。
+
+从零部署 → [`autodl/docs/musubi-tuner-deploy.md`](autodl/docs/musubi-tuner-deploy.md)（5090 + Python 3.12 + PyTorch 2.8 / cu128，含最小 Qwen-Image LoRA 验证示例）。
+
+> 当前为 draft 状态，首次实际部署后会回填实测结果并升级为 active；远程编排 trainer (`musubi-trainer`) 在路线图中。
 
 ### 我是 agent / 自动化脚本作者
 

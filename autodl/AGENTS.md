@@ -46,6 +46,7 @@ image-profiles/
 |---|---|---|
 | [ai-toolkit](image-profiles/ai-toolkit.toml) | active | 当前 AI-Toolkit 训练镜像 |
 | [lora-scripts-next](image-profiles/lora-scripts-next.toml) | active | wochenlong/lora-scripts-next 训练镜像（5090 / Blackwell，含 Anima/Flux/SDXL 默认值补丁与 6008 监控页） |
+| [musubi-tuner](image-profiles/musubi-tuner.toml) | draft | kohya-ss/musubi-tuner 纯命令行训练脚本集（5090 / Python 3.12 / cu128，图像架构 LoRA 优先；trainer 仓库 musubi-trainer 待建立） |
 | [lora-scripts](image-profiles/lora-scripts.toml) | draft | Akegarasu/lora-scripts 上游待接入镜像 |
 
 Agent 处理任务前必须先确认 profile。如果无法判断镜像类型，只能执行 `autodl-common` 的通用操作。
@@ -64,6 +65,7 @@ Agent 处理任务前必须先确认 profile。如果无法判断镜像类型，
 | AI-Toolkit 数据集已经在训练机器上，需要训练 | 外部 `aitoolkit-trainer` + `ai-toolkit` profile | 负责本机训练，不创建/释放云实例 |
 | 更新 `/root/lora-scripts-next`、Anima/Flux/SDXL 默认值修复、6008 监控页、镜像保存前检查 | [lora-scripts-next-maintenance](skills/lora-scripts-next-maintenance/SKILL.md) + `lora-scripts-next` profile | 只适用于 lora-scripts-next 镜像 |
 | 5090 / 50 系新机从零部署 lora-scripts-next | [`docs/lora-scripts-next-5090-deploy.md`](docs/lora-scripts-next-5090-deploy.md) + `lora-scripts-next` profile | 从空白 PyTorch 2.8 + CUDA 12.8 镜像建环境到首次启动 GUI |
+| 部署 / 升级 musubi-tuner 镜像（命令行训练） | [`docs/musubi-tuner-deploy.md`](docs/musubi-tuner-deploy.md) + `musubi-tuner` profile | profile 当前 draft；trainer 仓库 musubi-trainer 尚未建立，首次部署后回填实测、升级 active |
 | Akegarasu/lora-scripts 上游镜像训练 | `lora-scripts` profile | 当前仅有 profile 草案；先手动确认路径和命令 |
 
 组合任务按阶段拆分：
@@ -78,6 +80,7 @@ Agent 处理任务前必须先确认 profile。如果无法判断镜像类型，
 - `image-profiles/` — 镜像 profile，定义不同训练镜像的路径、环境、trainer
 - `docs/ai-toolkit-model-request.md` — 向 AutoDL 申请补充 AI-Toolkit 训练所需共享模型
 - `docs/lora-scripts-next-5090-deploy.md` — lora-scripts-next 在 5090 / 50 系新机的从零部署
+- `docs/musubi-tuner-deploy.md` — musubi-tuner 在 AutoDL 的从零部署（5090 + Python 3.12 + cu128）
 - `docs/maintenance-guide.md` — 维护本仓库、新增 skill/profile/trainer 和重构规则
 - `skills/ai-toolkit-maintenance/scripts/` — AI-Toolkit 启动与一键重启脚本
 - `skills/ai-toolkit-scripts-update/scripts/` — AI-Toolkit 模型符号链接脚本

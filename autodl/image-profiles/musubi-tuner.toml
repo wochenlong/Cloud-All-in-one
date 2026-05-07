@@ -1,0 +1,119 @@
+# AutoDL kohya-ss/musubi-tuner 镜像 profile
+# musubi-tuner 是 kohya-ss 维护的纯命令行训练脚本集，无 GUI、无后台服务。
+# 本 profile 描述将其打包为 AutoDL 镜像后的目录、环境与共享盘映射。
+
+id = "musubi-tuner"
+display_name = "kohya-ss/musubi-tuner AutoDL 镜像"
+status = "draft"        # 尚未在真实镜像验证；首次部署后再升级为 active
+upstream = "https://github.com/kohya-ss/musubi-tuner"
+
+[paths]
+project_dir = "/root/musubi-tuner"
+dataset_root = "/root/autodl-tmp/datasets"
+job_config_dir = "/root/autodl-tmp/jobs"
+output_dir = "/root/autodl-tmp/output"
+log_dir = "/root/autodl-tmp/logs"
+shared_model_dir = "/.autodl-model/data"
+local_models_dir = "/root/musubi-tuner/sd-models"
+
+[runtime]
+# musubi-tuner 官方推荐 Python 3.10+。AutoDL 官方 PyTorch 2.8.0 + CUDA 12.8
+# 镜像基础 Python 是 3.12，目前需要按用户实测验证；如果 3.12 出兼容问题，
+# 可在镜像内额外创建 conda 3.10 环境。
+python_version = "3.12"
+torch = "2.8.0+cu128"
+cuda = "12.8"
+gpu_target = "RTX 5090 / 50 系 (Blackwell, sm_120)"
+
+# 默认安装方式：项目根目录建 venv，再 `pip install -e .`（musubi-tuner 官方推荐）
+install_method = "venv"
+venv_path = "/root/musubi-tuner/.venv"
+setup_command = "source /root/musubi-tuner/.venv/bin/activate"
+
+# 备选：如果 Python 3.12 与上游存在兼容性问题，使用 conda 3.10 环境
+fallback_conda_env = "musubi"
+
+# 必须在首次部署后执行一次（accelerate 默认配置）
+accelerate_config_command = "accelerate config"
+
+# 镜像不带任何后台服务；以下端口仅在用户手动开 tensorboard 时占用
+# (musubi-tuner 训练命令支持 --logging_dir + --log_with tensorboard)
+tensorboard_port = 6006
+
+# 没有 UI / 自启动 / tmux 会话；保留字段以便和其他 profile 字段表对齐
+ui_command = ""
+ui_port = 0
+tmux_ui_session = ""
+
+[shared_models]
+# 优先支持的图像类架构（用户选择：image），共享盘均已收录
+flux1_dev = "/.autodl-model/data/black-forest-labs/FLUX.1-dev"
+flux1_kontext_dev = "/.autodl-model/data/black-forest-labs/FLUX.1-Kontext-dev"
+flux2_dev = "/.autodl-model/data/black-forest-labs/FLUX.2-dev"
+flux2_klein_4b = "/.autodl-model/data/black-forest-labs/FLUX.2-klein-base-4B"
+flux2_klein_9b = "/.autodl-model/data/black-forest-labs/FLUX.2-klein-base-9B"
+qwen_image = "/.autodl-model/data/Qwen/Qwen-Image"
+qwen_image_2512 = "/.autodl-model/data/Qwen/Qwen-Image-2512"
+qwen_image_edit_2509 = "/.autodl-model/data/Qwen/Qwen-Image-Edit-2509"
+qwen_image_edit_2511 = "/.autodl-model/data/Qwen/Qwen-Image-Edit-2511"
+qwen3_4b = "/.autodl-model/data/Qwen/Qwen3-4B"   # FLUX.2 klein TE
+qwen3_8b = "/.autodl-model/data/Qwen/Qwen3-8B"
+z_image = "/.autodl-model/data/Tongyi-MAI/Z-Image"
+z_image_turbo = "/.autodl-model/data/Tongyi-MAI/Z-Image-Turbo"
+flux_text_encoders = "/.autodl-model/data/comfyanonymous/flux_text_encoders"  # CLIP-L / T5XXL
+mistral_small_3_1_24b = "/.autodl-model/data/mistralai/Mistral-Small-3.1-24B-Instruct-2503"  # FLUX.2 dev TE
+
+# 已知 AutoDL 共享盘缺失的依赖（已通过 docs/ai-toolkit-model-request.md 申请补充）：
+#   ai-toolkit/flux2_vae  —— FLUX.2 klein 训练所需 VAE，目前需要本地上传到 paths.local_models_dir
+missing_shared_models = [
+  "ai-toolkit/flux2_vae",
+]
+
+[supported_architectures]
+# musubi-tuner 实际支持的架构清单（截至 2026-02 上游 README）
+# 本 profile 优先验证 image 这五个；其余架构上游脚本已存在，可在镜像内直接调用
+image = [
+  "flux1-kontext",
+  "flux2-dev",
+  "flux2-klein-4b",
+  "flux2-klein-9b",
+  "qwen-image",
+  "qwen-image-edit",
+  "qwen-image-layered",
+  "z-image",
+]
+video = [
+  "hunyuan-video",
+  "hunyuan-video-1.5",
+  "wan2.1",
+  "wan2.2",
+  "framepack",
+  "kandinsky-5",
+]
+
+[maintenance]
+# 本镜像目前无专属维护流程，先复用通用 AutoDL 检查
+update_skill = "autodl-common"
+model_link_skill = ""
+model_link_script = ""
+
+[trainer]
+# 用户已确认未来做成独立 trainer 仓库（musubi-trainer），由 cloud-training 远程编排
+# 仓库尚未建立，此处先 placeholder；待 musubi-trainer 仓库就绪后把 status 改成 active
+type = "external"
+status = "planned"      # planned / active / deprecated
+name = "musubi-trainer"
+repo = "https://github.com/wochenlong/musubi-trainer"
+install_dir = "/root/musubi-trainer"
+profile = "autodl"
+supported_tasks = ["image"]    # 第一阶段图像类 LoRA；后续扩展 video
+
+[test_datasets]
+image_generation = ""
+image_edit_target = ""
+image_edit_control = ""
+
+[notes]
+deploy_doc = "autodl/docs/musubi-tuner-deploy.md"
+license = "Apache-2.0（部分子目录如 hunyuan_model 走原项目 license）"
+upstream_caveat = "上游标注 'under active development'；锁定 release tag 比 main 稳定"
