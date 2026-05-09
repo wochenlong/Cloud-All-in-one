@@ -185,6 +185,69 @@ GET /api/train/log/tail/{task_id}
 /root/lora-scripts-next/apply_lora_next_anima_defaults.py
 ```
 
+## AutoDL 共享盘兼容性补丁（必须保留）
+
+`wochenlong/lora-scripts-next` 相对 `Akegarasu/lora-scripts` 上游有几处针对 AutoDL 共享盘和 PyTorch 2.6+ 的修复，拉上游时**绝对不能被覆盖**。
+
+### 1. `_load_target_model` 不再 readlink/realpath
+
+AutoDL 的「我的模型」共享盘对用户上传文件用 SHA256 hash 命名（例如 `/.autodl/5c/18/f8/5c18f83c804c06e10e24c191b422f02d`），**没有 `.safetensors` 后缀**。`apply_lora_next_anima_defaults.py` 把它软链到 `sd-models/sdxl/eps/ChenkinNoob-XL-V0.5.safetensors`。
+
+上游 SD 1.x / SDXL 训练 + `gen_img.py` 都会先 `os.readlink()` / `os.path.realpath()` 解析 symlink，把带后缀的路径变回裸 hash，导致 `is_safetensors()` 仅靠后缀判断时返回 `False`，进入 `torch.load` 抛 `_pickle.UnpicklingError: invalid load key, '\xfd'`（或 PyTorch 2.6+ 的 `Weights only load failed ... Unsupported operand 80`）。
+
+修复：把以下文件里的 `name_or_path = os.readlink(...)` / `os.path.realpath(...)` 行整行删除。`os.path.isfile()` 自身就会跟随 symlink，那行完全多余。
+
+| 文件 | 函数 |
+|---|---|
+| `scripts/stable/library/sdxl_train_util.py` | `_load_target_model` |
+| `scripts/stable/library/train_util.py` | `_load_target_model` |
+| `scripts/stable/gen_img.py` | 主入口 |
+| `scripts/dev/library/sdxl_train_util.py` | `_load_target_model` |
+| `scripts/dev/library/train_util.py` | `_load_target_model` |
+| `scripts/dev/gen_img.py` | 主入口 |
+
+每处都标了 `# NOTE(wochenlong):` 注释，搜该字符串可以快速验证补丁是否还在。
+
+### 2. 传统 ckpt `torch.load` 加 `weights_only=False`
+
+PyTorch 2.6 起 `torch.load` 默认 `weights_only=True`，会拒绝传统 SD 1.x / SDXL pickle 检查点。即使没踩到上面那个 readlink 坑，旧 `.ckpt` 也加载不了。
+
+修复：以下 4 处都显式加 `weights_only=False`：
+
+- `scripts/{stable,dev}/library/model_util.py`（`load_models_from_stable_diffusion_checkpoint`）
+- `scripts/{stable,dev}/library/sdxl_model_util.py`（`load_models_from_sdxl_checkpoint`）
+
+### 3. xformers 缺失时的 schema 兜底
+
+`mikazuki/schema/shared.ts` 出厂默认 `xformers: Schema.boolean().default(true)`。RTX 5090 / cu128 上 xformers wheel 还不稳定可装；环境里没装时，前端表单一打开就把 xformers 勾上，提交训练即崩 `ImportError: No module named 'xformers'`。
+
+修复：`apply_lora_next_anima_defaults.py` 增加 `ensure_xformers_default()`，启动时探测 xformers 是否可 import：
+
+- 缺失 → 改 schema 为 `xformers default(false)` + `sdpa default(true)`
+- 存在 → 恢复 `xformers default(true)`，`sdpa` 不带 default
+
+逻辑幂等，会在每次 `start_lora_next.sh` / `update_lora_gui.sh` 启动时自动跑。该函数即使错误删除，`xformers` 装好了也不影响训练；但只要环境里没 xformers，就必须保留。
+
+### 同步上游时的检查清单
+
+`update_lora_gui.sh` 跑完后做一次：
+
+```bash
+cd /root/lora-scripts-next
+grep -n "wochenlong" scripts/stable/library/sdxl_train_util.py \
+                     scripts/stable/library/train_util.py \
+                     scripts/stable/library/sdxl_model_util.py \
+                     scripts/stable/library/model_util.py \
+                     scripts/stable/gen_img.py \
+                     scripts/dev/library/sdxl_train_util.py \
+                     scripts/dev/library/train_util.py \
+                     scripts/dev/library/sdxl_model_util.py \
+                     scripts/dev/library/model_util.py \
+                     scripts/dev/gen_img.py
+```
+
+每个文件都应至少出现一次 `NOTE(wochenlong)`。任一文件失踪意味着上游冲突解决时丢了 patch，需要从 `wochenlong/lora-scripts-next` git history 把对应 commit 找回（`git log --oneline --grep="AutoDL hashed"`）。
+
 ## 已知环境细节
 
 - `transformers==4.51.3`、`diffusers==0.33.1` 是当前已验证版本。
@@ -193,6 +256,7 @@ GET /api/train/log/tail/{task_id}
 - 无卡 / 受限容器（CPU 内存上限较低）里，标签编辑器可能被 cgroup OOM；正式带卡镜像不会触发，所以**不要**为了调试加回 `--disable-tageditor`。
 - GUI 启动后 `curl -sI http://127.0.0.1:6006` 应返回 `HTTP/1.1 200`。
 - Torch / GPU 检测会出现警告，只要 GUI 页面能开就忽略。
+- xformers 在 5090 / cu128 上能否装上不稳定，**不强制要求**；缺失时由 `ensure_xformers_default()` 自动切到 SDPA。
 
 ## 保存镜像前检查
 

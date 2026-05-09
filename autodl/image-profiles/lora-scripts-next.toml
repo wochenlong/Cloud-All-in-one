@@ -64,6 +64,26 @@ sdxl_vpred_noobai = "/.autodl/a0/81/5e/a0815ef81f4a91a830dcc35dc8e06ac1"
 anima = "/root/lora-scripts-next/mikazuki/schema/sd3-lora.ts"
 flux = "/root/lora-scripts-next/mikazuki/schema/flux-lora.ts"
 sdxl_master = "/root/lora-scripts-next/mikazuki/schema/lora-master.ts"
+# 启动脚本会按 xformers 是否可 import 切换 shared.ts 默认值（缺 xformers 自动启 sdpa）
+shared = "/root/lora-scripts-next/mikazuki/schema/shared.ts"
+
+[upstream_patches]
+# wochenlong fork 相对 Akegarasu/lora-scripts 必须保留的本地 patch（拉上游时不能丢）
+# 详见 skills/lora-scripts-next-maintenance/SKILL.md「AutoDL 共享盘兼容性补丁」一节
+autodl_hashed_safetensors = """
+删除 _load_target_model / gen_img.py 里的 os.readlink / os.path.realpath，
+否则 AutoDL hash 命名共享盘会被 is_safetensors() 误判为 ckpt。
+覆盖 stable + dev 双分支共 6 个文件。
+"""
+torch_load_weights_only = """
+传统 SD 1.x / SDXL ckpt 的 torch.load 必须显式 weights_only=False，
+兼容 PyTorch 2.6+ 默认禁用 pickle。覆盖 stable + dev 共 4 个文件。
+"""
+xformers_schema_fallback = """
+apply_lora_next_anima_defaults.py 的 ensure_xformers_default() 会按运行环境动态切换
+mikazuki/schema/shared.ts 的 xformers/sdpa 默认值。RTX 5090 / cu128 上 xformers
+wheel 暂不稳定可装，缺失时必须自动回退到 sdpa。
+"""
 
 [maintenance]
 update_skill = "lora-scripts-next-maintenance"
